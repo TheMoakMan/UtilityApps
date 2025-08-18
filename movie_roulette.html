@@ -1,0 +1,663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="utf-8" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<title>Movie Roulette — Family Fun Picker</title>
+	<meta name="description" content="Spin the wheel to pick a family movie. Hide titles, pick by vibe, then reveal!" />
+	<style>
+		:root{
+			--bg: #0c0f14;
+			--bg2:#101522;
+			--card:#121826;
+			--text:#e7ecff;
+			--muted:#9fb0ffcc;
+			--accent:#7c5cff;
+			--accent2:#00e6a8;
+			--danger:#ff4d6d;
+			--warning:#ffd166;
+			--shadow: 0 10px 30px rgba(0,0,0,.35);
+			--radius: 16px;
+		}
+		*{box-sizing:border-box}
+		html,body{height:100%}
+		body{
+			margin:0; font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji","Segoe UI Emoji";
+			color:var(--text);
+			background:
+				radial-gradient(1200px 600px at -10% -20%, #4b3df02a, transparent 60%),
+				radial-gradient(1000px 500px at 110% 10%, #00e6a81a, transparent 60%),
+				linear-gradient(180deg, var(--bg), var(--bg2));
+		}
+		header{
+			padding: 28px 20px 10px;
+			display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
+		}
+		.brand{
+			display:flex; align-items:center; gap:14px;
+		}
+		.logo{
+			width:44px; height:44px; border-radius:50%;
+			background: conic-gradient(from 220deg, var(--accent), #39f, var(--accent2), var(--accent));
+			box-shadow: 0 0 30px #7c5cff66 inset, 0 0 24px #00e6a833;
+			position:relative;
+		}
+		.logo::after{
+			content:""; position:absolute; inset:8px; border-radius:50%;
+			background:radial-gradient(circle at 30% 30%, #fff8, transparent 40%), linear-gradient(180deg, #0002, transparent);
+		}
+		h1{margin:0; font-weight:800; letter-spacing:.2px;}
+		h1 span{background:linear-gradient(90deg, #fff, #b8c4ff); -webkit-background-clip:text; background-clip:text; color:transparent}
+		.tagline{color:var(--muted); font-size:.95rem}
+
+		main{max-width:1100px; margin:10px auto 60px; padding:0 18px;}
+		.panel{
+			background: linear-gradient(180deg, #121827c0, #101725c0);
+			border:1px solid #ffffff14; border-radius: var(--radius);
+			box-shadow: var(--shadow);
+			padding:18px; backdrop-filter: blur(8px);
+		}
+		.controls{display:grid; grid-template-columns: 1.2fr .8fr; gap:16px}
+		@media (max-width: 920px){ .controls{grid-template-columns: 1fr} }
+
+		.group{display:flex; flex-direction:column; gap:10px}
+		.group h3{margin:0; font-size:1rem; font-weight:700}
+		.chips{display:flex; flex-wrap:wrap; gap:10px}
+		.chip{
+			display:inline-flex; align-items:center; gap:8px; padding:10px 12px; border-radius:999px; cursor:pointer; user-select:none;
+			background:#1a2235; color:#cfe1ff; border:1px solid #ffffff1f;
+			transition: transform .1s ease, border-color .2s ease, background .2s ease;
+		}
+		.chip:hover{transform: translateY(-1px)}
+		.chip input{display:none}
+		.chip.active{background: #202a43; border-color:#7c5cff66; box-shadow:0 0 0 2px #7c5cff22 inset}
+		.chip .dot{width:8px; height:8px; border-radius:50%; background:#7c5cff}
+
+		.row{display:flex; gap:12px; align-items:center; flex-wrap:wrap}
+		.row input[type="text"], .row input[type="password"], .row select{
+			flex:1; min-width:220px; background:#0e1422; border:1px solid #ffffff1a; color:var(--text);
+			padding:10px 12px; border-radius:10px; outline:none;
+		}
+		.hint{font-size:.85rem; color:#b9c7ffcc}
+		.note{font-size:.78rem; color:#94a3b8}
+
+		.actions{display:flex; gap:10px; flex-wrap:wrap}
+		button{
+			appearance:none; border:none; background:linear-gradient(180deg, #7c5cff, #5a3aff);
+			color:#fff; padding:12px 16px; border-radius:12px; cursor:pointer; font-weight:700; letter-spacing:.2px;
+			box-shadow: 0 6px 18px #7c5cff55, 0 0 0 1px #ffffff10 inset; transition: transform .08s ease, box-shadow .2s ease, filter .2s ease;
+		}
+		button:hover{transform: translateY(-1px); filter:brightness(1.05)}
+		button:active{transform: translateY(0)}
+		button.secondary{background:#16213a; color:#d5e3ff; box-shadow: inset 0 0 0 1px #ffffff1a}
+		button.warning{background:linear-gradient(180deg, #ff9d00, #ff6a00)}
+		button.ghost{background:transparent; box-shadow:none; border:1px dashed #ffffff33}
+
+		.results{margin-top:22px}
+		.grid{display:grid; grid-template-columns: repeat(3, 1fr); gap:16px}
+		@media (max-width: 920px){ .grid{grid-template-columns:1fr} }
+
+				.card{ perspective: 1000px; -webkit-perspective: 1000px; }
+				.flip{
+			position:relative; width:100%; min-height:240px; border-radius:16px; overflow:hidden; cursor:pointer;
+					transform-style: preserve-3d; -webkit-transform-style: preserve-3d; transition: transform .7s cubic-bezier(.2,.7,.2,1), height .3s ease;
+		}
+		.card.revealed .flip{ transform: rotateY(180deg) }
+		.face{
+			position:absolute; inset:0; padding:16px; display:flex; flex-direction:column; gap:10px;
+			background: radial-gradient(120% 120% at 100% 0%, #1b2442, #121827 60%);
+					border:1px solid #ffffff12; border-radius:16px; backface-visibility:hidden; -webkit-backface-visibility:hidden;
+		}
+				.front{
+					background: linear-gradient(180deg, #171f36, #121827); display:flex; gap:8px; transform: rotateY(0deg);
+		}
+				.back{ transform: rotateY(180deg); }
+		.mask-title{height:28px; width:60%; border-radius:8px; background:linear-gradient(90deg, #253054, #1e2747); opacity:.8}
+		.desc{color:#d7e2ff; line-height:1.5}
+		.pill{display:inline-flex; align-items:center; gap:6px; padding:6px 10px; background:#1d2847; border:1px solid #ffffff1a; border-radius:999px; color:#c7d7ff}
+		.platforms{display:flex; flex-wrap:wrap; gap:8px}
+
+		.loader{display:none; align-items:center; gap:10px; color:#cdd9ff}
+		.loader.spin .dot{width:10px; height:10px; border-radius:50%; background:var(--accent); box-shadow:0 0 20px #7c5cff}
+		.loader.spin{display:flex}
+		.spinner{width:22px; height:22px; border:3px solid #ffffff24; border-top-color:#7c5cff; border-radius:50%; animation: spin 1s linear infinite}
+		@keyframes spin{to{transform:rotate(360deg)}}
+
+		.confetti{pointer-events:none; position:fixed; inset:0; overflow:hidden}
+		.confetti span{position:absolute; width:10px; height:14px; background:var(--accent2); transform:rotate(20deg); opacity:.9}
+
+		/* Modal popup */
+		.modal-overlay{position:fixed; inset:0; background:#0008; display:none; align-items:center; justify-content:center; z-index:1000}
+		.modal{background: linear-gradient(180deg, #121827, #0f1524); border:1px solid #ffffff22; border-radius:16px; box-shadow: var(--shadow); width:min(560px, 92vw); padding:18px}
+		.modal h2{margin:0 0 6px 0}
+		.modal .row{margin-top:8px}
+		.modal .actions{justify-content:flex-end}
+
+		footer{max-width:1100px; margin:24px auto 80px; padding:0 18px; color:#9fb0ff99; font-size:.9rem}
+		footer a{color:#bcd1ff}
+	</style>
+</head>
+<body>
+	<header>
+		<div class="brand">
+			<div class="logo" aria-hidden="true"></div>
+			<div>
+				<h1><span>Movie Roulette</span></h1>
+				<div class="tagline">Pick by vibe — then click to reveal the title and where to watch.</div>
+			</div>
+		</div>
+	</header>
+
+	<main>
+		<section class="panel controls">
+			<div class="group">
+				<h3>Streaming services you have</h3>
+				<div class="chips" id="services">
+					<!-- Services as toggle chips -->
+				</div>
+				<div class="note">Tip: Select only the platforms your family can access. We'll keep choices to your picks.</div>
+				<div class="row" style="margin-top:10px">
+					<input type="text" id="themes" placeholder="Tags or vibes (e.g. adventure, animals, space, friendship)" />
+				</div>
+				<!-- Content restriction options removed; restrictions are hard-coded in the prompt. -->
+				<div class="row">
+					<input type="text" id="excludeCustom" placeholder="Optional: other genres to exclude (comma-separated)" />
+				</div>
+
+						<div class="row" style="margin-top:6px">
+							<input type="password" id="apiKey" placeholder="OpenAI API key (sk-...) — stays on your device" />
+							<input type="text" id="projectId" placeholder="Project ID (optional, e.g., proj_...)" />
+							<select id="model">
+						<option value="gpt-4o-mini" selected>gpt-4o-mini (recommended)</option>
+						<option value="gpt-4o">gpt-4o</option>
+						<option value="gpt-4.1-mini">gpt-4.1-mini</option>
+					</select>
+				</div>
+				<div class="actions" style="margin-top:8px">
+					<button id="spinBtn">Spin the Wheel</button>
+					<div class="loader" id="loader"><div class="spinner"></div> Finding great options…</div>
+				</div>
+						<div class="hint">We ask ChatGPT for mystery picks that match your vibe and settings. Use a project-scoped key (no Project ID needed) or provide a Project ID if you use a user/org key.</div>
+			</div>
+
+			<div class="group">
+				<h3>How it works</h3>
+				<ol style="margin:0 0 8px 18px; line-height:1.6; color:#dbe5ff">
+					<li>Select your streaming services.</li>
+					<li>Enter a few tags or themes your family is in the mood for.</li>
+					<li>Optionally add excludes. We allow PG/PG-13/R; we’ll avoid X/NC-17 and explicit content.</li>
+					<li>Hit “Spin”. You’ll see three mystery descriptions.</li>
+					<li>Pick the description you like. Click to reveal the title and where to watch.</li>
+				</ol>
+				<div class="note">Platform availability may vary by region and time. Use the search links to verify.</div>
+			</div>
+		</section>
+
+		<section class="results" id="results" style="display:none">
+			<div class="grid" id="cards"></div>
+			<div class="actions" style="margin-top:14px">
+				<button class="secondary" id="reshuffleBtn">New Set</button>
+				<button class="ghost" id="copyBtn">Copy Picks</button>
+			<button class="warning" id="moreBtn">GET MORE</button>
+			</div>
+		</section>
+	</main>
+
+	<div class="confetti" id="confetti" aria-hidden="true"></div>
+
+	<!-- Modal for reveal info -->
+	<div class="modal-overlay" id="revealModal" role="dialog" aria-modal="true" aria-hidden="true">
+		<div class="modal" role="document">
+			<div class="row" style="align-items:baseline; gap:10px">
+				<h2 id="modalTitle">Title</h2>
+				<span class="pill" id="modalYear" style="display:none"></span>
+			</div>
+			<div class="platforms" id="modalPlatforms" style="margin-top:6px"></div>
+			<div class="actions" style="margin-top:14px">
+				<button class="secondary" id="closeModalBtn">Close</button>
+			</div>
+		</div>
+	</div>
+
+	<footer>
+		Built for families, privacy-first. Your API key is used only in your browser. No server required.
+		<br/>Optional search links are provided for convenience. Data may be approximate.
+	</footer>
+
+	<script>
+		// --- Streaming services catalog
+		const SERVICE_LIST = [
+			{ id: 'Netflix', label: 'Netflix', color: '#e50914' },
+			{ id: 'Disney+', label: 'Disney+', color: '#113ccf' },
+			{ id: 'Hulu', label: 'Hulu', color: '#1ce783' },
+			{ id: 'Prime Video', label: 'Prime Video', color: '#00a8e1' },
+			{ id: 'Max', label: 'Max', color: '#5b34ff' },
+			{ id: 'Apple TV+', label: 'Apple TV+', color: '#9da3b0' },
+			{ id: 'Peacock', label: 'Peacock', color: '#f5c518' },
+			{ id: 'Paramount+', label: 'Paramount+', color: '#0064ff' },
+			{ id: 'Tubi', label: 'Tubi', color: '#ff2e63' },
+			{ id: 'Vudu', label: 'Vudu', color: '#2a75ff' }
+		];
+
+		// --- State
+	let picks = [];
+	let displayIndex = 0; // next index to show (3 at a time)
+
+		// --- UI helpers
+		const servicesEl = document.getElementById('services');
+		const loaderEl = document.getElementById('loader');
+		const cardsEl = document.getElementById('cards');
+		const resultsEl = document.getElementById('results');
+	// Family/restriction toggles removed (handled in prompt). Only custom excludes remain.
+
+		// Render service chips
+		SERVICE_LIST.forEach(s => {
+			const lbl = document.createElement('label');
+			lbl.className = 'chip';
+			lbl.style.setProperty('--svc', s.color);
+			lbl.innerHTML = `<input type="checkbox" value="${s.id}"><span class="dot" style="background:${s.color}"></span><span>${s.label}</span>`;
+			lbl.addEventListener('click', (e)=> {
+				// reflect active visual; input toggles automatically
+				setTimeout(()=> lbl.classList.toggle('active', lbl.querySelector('input').checked));
+			});
+			servicesEl.appendChild(lbl);
+		});
+
+	// No familyChip events (removed)
+
+		// --- API key inputs
+		const apiKeyInput = document.getElementById('apiKey');
+		const projectIdInput = document.getElementById('projectId');
+		const modelSelect = document.getElementById('model');
+
+		// --- Actions
+			document.getElementById('spinBtn').addEventListener('click', async ()=>{
+			const apiKey = apiKeyInput.value.trim();
+			if(!apiKey){ alert('Please paste your OpenAI API key.'); return; }
+			const selectedServices = [...servicesEl.querySelectorAll('input:checked')].map(i=>i.value);
+			if(selectedServices.length===0){ alert('Select at least one streaming service.'); return; }
+
+			const themes = document.getElementById('themes').value.trim();
+			const excludes = getExcludes();
+			const model = modelSelect.value;
+				const projectId = projectIdInput.value.trim();
+
+			setLoading(true);
+			try{
+					picks = await getPicks({ apiKey, projectId, model, services: selectedServices, themes, excludes });
+				picks = sanitizeAndFilter(picks, { excludes });
+				if(picks.length < 3){ throw new Error('We could not get enough valid options. Try again.'); }
+				displayIndex = 0;
+				renderNextBatch(true);
+				resultsEl.style.display = '';
+				burstConfetti();
+			}catch(err){
+				console.error(err);
+				alert('Could not get movie picks. ' + (err?.message || 'Please try again.'));
+			}finally{ setLoading(false); }
+		});
+
+		document.getElementById('reshuffleBtn').addEventListener('click', ()=>{
+			if(picks?.length){
+				picks = shuffle(picks);
+				renderNextBatch(true);
+			} else {
+				resultsEl.style.display = 'none';
+			}
+		});
+
+		document.getElementById('copyBtn').addEventListener('click', async ()=>{
+			if(!picks?.length) return;
+			const txt = picks.map((p,i)=>`${i+1}. ${p.title} (${p.year||''}) — ${p.platforms?.join(', ')||'Platforms vary'}`).join('\n');
+			try{ await navigator.clipboard.writeText(txt); toast('Copied to clipboard'); }catch{ toast('Copy failed', true); }
+		});
+
+		// Sample mode removed from UI.
+
+		document.getElementById('moreBtn').addEventListener('click', ()=>{
+			if(!picks?.length) return;
+			renderNextBatch(false);
+		});
+
+		function setLoading(v){ loaderEl.classList.toggle('spin', v); }
+
+		function getExcludes(){
+			const custom = document.getElementById('excludeCustom').value.trim();
+			const parts = custom? custom.split(',').map(s=>s.trim()).filter(Boolean) : [];
+			return [...new Set(parts)];
+		}
+
+	function sanitizeAndFilter(list, { excludes }){
+			const banned = new RegExp(`\\b(${excludes.map(escapeRegExp).join('|')})\\b`, 'i');
+			return list
+				.map(item=>{
+					const out = { ...item };
+					if(out.title && out.description){
+						const rx = new RegExp(escapeRegExp(out.title), 'ig');
+						out.description = out.description.replace(rx, '—'); // obscure accidental title mentions
+					}
+					// Ensure platforms only from user's list if provided in prompt
+					if(Array.isArray(out.platforms)){
+						out.platforms = out.platforms.filter(Boolean);
+					}
+					return out;
+				})
+				.filter(m => {
+					const desc = (m.description||'');
+					if(excludes.length && banned.test(desc + ' ' + (m.genres||[]).join(' '))) return false;
+					return true;
+				})
+		;
+		}
+
+		function escapeRegExp(str){ return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+		function shuffle(arr){ return [...arr].sort(()=>Math.random()-0.5); }
+
+	function renderCards(list){
+			cardsEl.innerHTML = '';
+			list.forEach((m, idx)=>{
+				const card = document.createElement('div');
+				card.className = 'card';
+				card.innerHTML = `
+					<div class="flip">
+						<div class="face front">
+							<div class="mask-title"></div>
+							<div class="desc">${escapeHtml(m.description || 'No description')}</div>
+							<div style="margin-top:auto" class="row">
+								<span class="pill">Mystery Pick ${String.fromCharCode(65+idx)}</span>
+								<span class="pill" title="Approximate age rating and year">${(m.mpaaRating?('Rated '+escapeHtml(m.mpaaRating)):'Family') + (m.year ? (' \u2022 ' + escapeHtml(m.year)) : '')}</span>
+							</div>
+						</div>
+					</div>`;
+				// Open modal on click
+				card.addEventListener('click', ()=> openRevealModal(m));
+				cardsEl.appendChild(card);
+				// Initialize height to front face content (front only)
+				requestAnimationFrame(()=> adjustFlipHeight(card));
+			});
+		}
+
+		function renderCardsAppend(list){
+			list.forEach((m, idx)=>{
+				const card = document.createElement('div');
+				card.className = 'card';
+				card.innerHTML = `
+					<div class="flip">
+						<div class="face front">
+							<div class="mask-title"></div>
+							<div class="desc">${escapeHtml(m.description || 'No description')}</div>
+							<div style="margin-top:auto" class="row">
+								<span class="pill">Mystery Pick</span>
+								<span class="pill" title="Approximate age rating and year">${(m.mpaaRating?('Rated '+escapeHtml(m.mpaaRating)):'Family') + (m.year ? (' \u2022 ' + escapeHtml(m.year)) : '')}</span>
+							</div>
+						</div>
+					</div>`;
+				card.addEventListener('click', ()=> openRevealModal(m));
+				cardsEl.appendChild(card);
+				requestAnimationFrame(()=> adjustFlipHeight(card));
+			});
+		}
+
+		function renderNextBatch(reset=false){
+			if(!picks?.length) return;
+			const moreBtn = document.getElementById('moreBtn');
+			if(reset){
+				cardsEl.innerHTML = '';
+				displayIndex = 0;
+			}
+			const page = picks.slice(displayIndex, displayIndex + 3);
+			if(reset) renderCards(page); else renderCardsAppend(page);
+			displayIndex += page.length;
+			moreBtn.style.display = (displayIndex < picks.length) ? '' : 'none';
+			requestAnimationFrame(()=> {
+				document.querySelectorAll('#cards .card').forEach(adjustFlipHeight);
+			});
+		}
+
+		function escapeHtml(s){
+			return String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;');
+		}
+
+		function openRevealModal(movie){
+			const overlay = document.getElementById('revealModal');
+			const titleEl = document.getElementById('modalTitle');
+			const yearEl = document.getElementById('modalYear');
+			const platsEl = document.getElementById('modalPlatforms');
+			// Show year inline with the title for consistency: "Title (Year)"
+			titleEl.textContent = (movie.title || 'Mystery Title') + (movie.year ? ` (${movie.year})` : '');
+			// Hide separate year pill now that year is inline with the title
+			yearEl.style.display='none';
+			const plats = (movie.platforms?.length? movie.platforms : ['Check availability']);
+			platsEl.innerHTML = plats.map(p=>`<span class="pill">${escapeHtml(p)}</span>`).join('');
+			overlay.style.display = 'flex';
+			overlay.setAttribute('aria-hidden','false');
+		}
+
+		function closeRevealModal(){
+			const overlay = document.getElementById('revealModal');
+			overlay.style.display = 'none';
+			overlay.setAttribute('aria-hidden','true');
+		}
+
+		document.getElementById('closeModalBtn').addEventListener('click', closeRevealModal);
+		document.getElementById('revealModal').addEventListener('click', (e)=>{
+			if(e.target.id === 'revealModal') closeRevealModal();
+		});
+		window.addEventListener('keydown', (e)=>{ if(e.key === 'Escape') closeRevealModal(); });
+
+		function adjustFlipHeight(card){
+			const flip = card.querySelector('.flip');
+			if(!flip) return;
+			const front = flip.querySelector('.front');
+			const back = flip.querySelector('.back');
+			const isRevealed = card.classList.contains('revealed');
+			const target = isRevealed ? back : front;
+			if(target){
+				// Use scrollHeight to fully fit content
+				flip.style.height = target.scrollHeight + 'px';
+			}
+		}
+
+		window.addEventListener('resize', ()=>{
+			document.querySelectorAll('#cards .card').forEach(adjustFlipHeight);
+		});
+
+			async function getPicks({ apiKey, projectId, model, services, themes, excludes }){
+			const sys = `You are a cheerful movie concierge. You must return strict JSON only. No commentary.`;
+			const user = {
+				role: 'user',
+				content: [
+					{ type: 'text', text: makePrompt({ services, themes, excludes }) }
+				]
+			};
+
+			const body = {
+				model,
+				temperature: 0.9,
+				response_format: { type: 'json_object' },
+				messages: [ { role:'system', content: sys }, user ]
+			};
+
+				const headers = {
+					'Content-Type': 'application/json',
+					'Authorization': 'Bearer ' + apiKey
+				};
+				if(projectId) headers['OpenAI-Project'] = projectId;
+
+						const res = await fetch('https://api.openai.com/v1/chat/completions', {
+				method: 'POST',
+					headers,
+				body: JSON.stringify(body)
+			});
+
+						if(!res.ok){
+							let errPayload = null;
+							try{ errPayload = await res.json(); }catch{}
+							const apiErr = errPayload?.error || {};
+							const msg = friendlyApiError(res.status, apiErr, projectId);
+							throw new Error(msg);
+						}
+
+			const data = await res.json();
+			const text = data.choices?.[0]?.message?.content?.trim();
+			if(!text) throw new Error('Empty response');
+			let json;
+			try{ json = JSON.parse(text); }
+			catch{
+				const m = text.match(/\{[\s\S]*\}/);
+				if(m) json = JSON.parse(m[0]); else throw new Error('Invalid JSON from model');
+			}
+			const items = json.movies || json.picks || json.results || [];
+			if(!Array.isArray(items) || items.length < 3) throw new Error('Expected at least 3 movies, got ' + (Array.isArray(items)? items.length : 'none'));
+			// Normalize up to 12
+			return items.slice(0,12).map(x=>({
+				title: x.title || x.name || '',
+				description: x.description || x.plot || x.synopsis || '',
+				platforms: Array.isArray(x.platforms)? x.platforms : [],
+				genres: Array.isArray(x.genres)? x.genres : [],
+				mpaaRating: x.mpaaRating || x.rating || '',
+				year: x.year || x.releaseYear || ''
+			}));
+		}
+
+				function friendlyApiError(status, apiErr, projectId){
+					const base = apiErr?.message || '';
+					const code = (apiErr?.code || '').toString();
+					// Common cases per https://platform.openai.com/docs/guides/error-codes/api-errors
+					if(status === 401){
+						return 'API error: Unauthorized — invalid or expired API key. Double-check the key and try again.';
+					}
+					if(status === 403){
+						if(!projectId){
+							return 'API error: Forbidden — this key may require a Project ID. Enter your Project ID (proj_...) or use a Project API key.';
+						}
+						return 'API error: Forbidden — the key does not have access to this project or model. Verify project membership and billing.';
+					}
+					if(status === 404){
+						return 'API error: Not Found — model or endpoint not found. Pick a valid model (e.g., gpt-4o-mini).';
+					}
+					if(status === 409){
+						return 'API error: Conflict — the request could not be completed due to a conflict. Retry in a moment.';
+					}
+					if(status === 422){
+						return 'API error: Unprocessable — the request body is invalid. Please try again or change the inputs.';
+					}
+					if(status === 429){
+						// Distinguish between rate limit and quota
+						if(/quota|insufficient_quota/i.test(base) || code === 'insufficient_quota'){
+							return 'API error: You exceeded your current quota. Enable billing for the project and set a usage limit, then retry.';
+						}
+						return 'API error: Rate limited — too many requests. Wait briefly and try again.';
+					}
+					if(status >= 500){
+						return 'API error: Server error — please retry in a few seconds.';
+					}
+					return 'API error: ' + (base || (status + ' ' + (apiErr?.type || 'Unknown')));
+				}
+
+		function makePrompt({ services, themes, excludes}){
+			const allowed = services.join(', ');
+			const themeText = themes? `Focus on these movie themes: ${themes}.` : 'Focus on broad, mainstream themes (varied genres welcome).';
+			const ex = excludes?.length? `Strictly exclude genres and vibes matching: ${excludes.join(', ')}.` : '';
+			const fam = 'Exclude pornography and do not include X-rated/NC-17 films. PG-13 is preferred when suitable; PG and R are fine. Keep descriptions tasteful: no explicit sexual details or graphic gore.';
+			return `
+Return EXACT JSON with 12 items and nothing else. Select movies available on at least one of these platforms: ${allowed} (choose only from this list for the platforms field). ${themeText} ${ex}
+${fam}
+			Do not always pick the most popular blockbusters; include lesser-known high-quality mainstream titles when appropriate. Avoid B movies and indie films—prioritize well-produced studio releases and broadly appealing options.
+Do not reveal the titles in descriptions. Avoid spoilers and obvious giveaway details. Make the description obscure but still focusing on the main theme (2 sentences max). Movie can be of different ratings and genres within the parameters. 
+Structure:
+{
+	"movies": [
+		{
+			"title": "string",
+			"description": "2-4 sentences, fun and engaging, no title words",
+			"platforms": ["${services[0]}"],
+			"genres": ["Action","Drama"],
+			"mpaaRating": "PG-13|PG|R",
+			"year": 2015
+		}, { }, { }
+	]
+}
+`;
+		}
+
+		// --- Confetti effect when results load
+		function burstConfetti(){
+			const root = document.getElementById('confetti');
+			root.innerHTML = '';
+			const colors = ['#7c5cff','#00e6a8','#ffd166','#39f','#ff4d6d'];
+			for(let i=0;i<100;i++){
+				const s = document.createElement('span');
+				s.style.left = Math.random()*100+'%';
+				s.style.top = '-10px';
+				s.style.background = colors[Math.floor(Math.random()*colors.length)];
+				s.style.transform = `rotate(${Math.random()*360}deg)`;
+				s.style.opacity = .75+Math.random()*0.25;
+				const dur = 2 + Math.random()*1.5;
+				s.animate([
+					{ transform: s.style.transform + ' translateY(0)', opacity: s.style.opacity },
+					{ transform: s.style.transform + ' translateY(120vh) rotate(720deg)', opacity: 0.9 }
+				], { duration: dur*1000, easing:'cubic-bezier(.2,.7,.2,1)', delay: Math.random()*400 });
+				root.appendChild(s);
+				setTimeout(()=> s.remove(), 3000);
+			}
+		}
+
+		function toast(msg, isErr=false){
+			const t = document.createElement('div');
+			t.textContent = msg;
+			t.style.position='fixed'; t.style.bottom='20px'; t.style.left='50%'; t.style.transform='translateX(-50%)';
+			t.style.background = isErr? '#3b1137' : '#142d23';
+			t.style.color = isErr? '#ffd6e8' : '#d1fae5';
+			t.style.border = '1px solid #ffffff22';
+			t.style.padding='10px 14px'; t.style.borderRadius='10px'; t.style.boxShadow='0 8px 24px #0006';
+			t.style.zIndex=9999; t.style.pointerEvents='none';
+			document.body.appendChild(t);
+			setTimeout(()=>{ t.remove(); }, 2200);
+		}
+
+		// --- Local sample (no API needed)
+	const SAMPLE_PICKS = [
+			{
+				title: 'Paddington',
+				description: 'A curious visitor from Peru brings marmalade, mishaps, and unexpected warmth to a bustling city family. Expect gentle laughs, cozy chaos, and a bear who means well—mostly.',
+				platforms: ['Netflix','Prime Video'],
+				genres: ['Family','Comedy'],
+				mpaaRating: 'PG',
+				year: 2014
+			},
+			{
+				title: 'The Mitchells vs. the Machines',
+				description: 'A quirky road trip turns epic when a tech meltdown forces one family to become unlikely heroes. Expect heart, handmade chaos, and a lot of very determined gadgets.',
+				platforms: ['Netflix'],
+				genres: ['Family','Adventure'],
+				mpaaRating: 'PG',
+				year: 2021
+			},
+			{
+				title: 'Wallace & Gromit: The Curse of the Were-Rabbit',
+				description: 'A cheese-loving inventor and his loyal pup must protect a village veggie competition from a mysterious nighttime nibbler. Puns, pastries, and plenty of claymation charm await.',
+				platforms: ['Max','Prime Video'],
+				genres: ['Family','Comedy'],
+				mpaaRating: 'G',
+				year: 2005
+			}
+		];
+
+		// Optional 12-sample set to demo pagination
+		const SAMPLE_PICKS_12 = [
+			...SAMPLE_PICKS,
+			{ title: 'Finding Nemo', description: 'A forgetful friend and a determined dad traverse the big blue in search of a tiny explorer.', platforms: ['Disney+'], genres: ['Family','Adventure'], mpaaRating: 'G', year: 2003 },
+			{ title: 'The Incredibles', description: 'A family with a knack for heroics must balance suburban life with saving the day.', platforms: ['Disney+'], genres: ['Family','Action'], mpaaRating: 'PG', year: 2004 },
+			{ title: 'Kubo and the Two Strings', description: 'A magical instrument, folded tales, and a brave boy set out to mend stories and spirits.', platforms: ['Max'], genres: ['Family','Fantasy'], mpaaRating: 'PG', year: 2016 },
+			{ title: 'The Iron Giant', description: 'A curious boy befriends something massive from the stars, teaching it a very human word.', platforms: ['Prime Video'], genres: ['Family','Sci-Fi'], mpaaRating: 'PG', year: 1999 },
+			{ title: 'Spider-Man: Into the Spider-Verse', description: 'A colorful collision of worlds shows that anyone can wear the mask—with a little leap of faith.', platforms: ['Netflix'], genres: ['Family','Adventure'], mpaaRating: 'PG', year: 2018 },
+			{ title: 'How to Train Your Dragon', description: 'In a land of fire and scales, an unlikely bond redefines courage and friendship.', platforms: ['Peacock'], genres: ['Family','Adventure'], mpaaRating: 'PG', year: 2010 },
+			{ title: 'The Princess Bride', description: 'Fencing, fighting, giants, miracles—true love and good-natured wit tie it all together.', platforms: ['Disney+','Hulu'], genres: ['Family','Fantasy'], mpaaRating: 'PG', year: 1987 },
+			{ title: 'The Lego Movie', description: 'Ordinary bricks stack into extraordinary fun when an average builder discovers he isn’t so average.', platforms: ['Max'], genres: ['Family','Comedy'], mpaaRating: 'PG', year: 2014 },
+			{ title: 'Monsters, Inc.', description: 'Behind closet doors, laughter becomes the real power—especially for two unlikely caretakers.', platforms: ['Disney+'], genres: ['Family','Comedy'], mpaaRating: 'G', year: 2001 }
+		];
+	</script>
+</body>
+</html>

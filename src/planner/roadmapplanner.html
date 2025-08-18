@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+	<meta charset="UTF-8" />
+	<title>Roadmap Planner</title>
+	<meta name="viewport" content="width=device-width,initial-scale=1" />
+	<style>
+		:root {
+			--bg:#0f1115;--panel:#1c2129;--panel-alt:#242b35;--border:#364151;--accent:#3da9ff;--accent-hover:#6dc0ff;--danger:#ff4d4f;--warn:#ffb347;--ok:#4caf50;--text:#e5eef5;--muted:#9dacba;--backlog:#39455a;--milestone:#2d3643;--dep-line:#6dc0ff99;--scrollbar-thumb:#465568;--highlight:#264f78;--selection:#17324d;
+		}
+		* { box-sizing:border-box; }
+		body { margin:0; font-family: system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,sans-serif; background:var(--bg); color:var(--text); height:100vh; display:flex; flex-direction:column; }
+		h1 { font-size:1.2rem; margin:0 0 .5rem; font-weight:600; }
+		header { padding:.75rem 1rem; background:var(--panel); display:flex; gap:.75rem; flex-wrap:wrap; align-items:center; border-bottom:1px solid var(--border); }
+		header > * { margin:0; }
+		button, input[type=file]::file-selector-button { background:var(--accent); color:#fff; border:1px solid var(--accent); padding:.45rem .85rem; border-radius:4px; cursor:pointer; font-weight:500; font-size:.85rem; }
+		button:hover, input[type=file]::file-selector-button:hover { background:var(--accent-hover); }
+		button.secondary { background:var(--panel-alt); border-color:var(--border); }
+		button.secondary:hover { background:#334052; }
+		button.danger { background:var(--danger); border-color:var(--danger); }
+		button.small { padding:.25rem .55rem; font-size:.7rem; }
+		input, select, textarea { background:var(--panel-alt); border:1px solid var(--border); color:var(--text); border-radius:4px; padding:.4rem .55rem; font-size:.8rem; }
+		input:focus, textarea:focus { outline:1px solid var(--accent); }
+		main { flex:1; display:flex; min-height:0; }
+		#boards { flex:1; display:flex; align-items:stretch; overflow:auto; gap:.75rem; padding:.75rem; position:relative; }
+		.column { background:var(--panel); min-width:260px; width:260px; display:flex; flex-direction:column; border:1px solid var(--border); border-radius:6px; max-height:100%; }
+		.column-header { display:flex; align-items:center; justify-content:space-between; gap:.25rem; padding:.5rem .6rem; background:linear-gradient(180deg,var(--panel-alt),var(--panel)); border-bottom:1px solid var(--border); position:sticky; top:0; z-index:2; }
+		.column-header input { width:100%; }
+		.items { flex:1; overflow:auto; padding:.5rem; display:flex; flex-direction:column; gap:.5rem; }
+		.item { background:var(--milestone); border:1px solid var(--border); padding:.5rem .55rem .4rem; border-radius:6px; display:flex; flex-direction:column; gap:.35rem; cursor:grab; position:relative; }
+		.item.backlog { background:var(--backlog); }
+		.item.dragging { opacity:.35; }
+		.item.selected { outline:2px solid var(--accent); }
+		.item h4 { margin:0; font-size:.8rem; font-weight:600; line-height:1.1; }
+		.tag { display:inline-block; background:var(--panel-alt); border:1px solid var(--border); padding:1px 6px; font-size:.6rem; border-radius:12px; text-transform:uppercase; letter-spacing:.5px; font-weight:600; color:var(--muted); }
+		.meta { display:flex; gap:.4rem; flex-wrap:wrap; }
+		.dep-badges { display:flex; gap:4px; flex-wrap:wrap; }
+		.dep-badges span { background:#1b2835; border:1px solid #2f3d4f; padding:1px 4px; font-size:.55rem; border-radius:4px; cursor:pointer; }
+		.dep-badges span:hover { background:#274156; }
+		.item-footer { display:flex; justify-content:space-between; align-items:center; gap:.25rem; }
+		/* .handle removed (dependency drag UI deprecated) */
+		.remove-dep-btn { color:var(--danger); cursor:pointer; margin-left:4px; }
+		#addMilestoneBtn { font-weight:600; }
+		#jsonFile { max-width:260px; }
+		#milestoneOrdering { display:flex; gap:.4rem; align-items:center; }
+		#sidePanel { width:330px; border-left:1px solid var(--border); background:var(--panel); display:flex; flex-direction:column; }
+		#sidePanel header { background:var(--panel-alt); border-bottom:1px solid var(--border); }
+		#editor { flex:1; overflow:auto; padding:.75rem .9rem 1.5rem; display:flex; flex-direction:column; gap:.9rem; }
+		#editor section { background:var(--panel-alt); border:1px solid var(--border); padding:.65rem .75rem .75rem; border-radius:6px; display:flex; flex-direction:column; gap:.55rem; }
+		#editor section h3 { margin:0 0 .25rem; font-size:.75rem; text-transform:uppercase; letter-spacing:.5px; font-weight:600; color:var(--muted); }
+		#itemsSearch { width:100%; }
+		.list-scroll { max-height:180px; overflow:auto; display:flex; flex-direction:column; gap:.25rem; }
+		.checkbox-row { font-size:.7rem; display:flex; align-items:center; gap:.4rem; padding:2px 4px; border-radius:4px; cursor:pointer; }
+		.checkbox-row:hover { background:#2d3947; }
+		.dependency-cycle { color:var(--danger); font-size:.65rem; font-weight:600; }
+		#markdownOutput { width:100%; min-height:220px; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size:.65rem; }
+		#saveMdBtn { align-self:flex-start; }
+		#graphCanvas { position:absolute; inset:0; pointer-events:none; z-index:1; }
+		.milestone-drop-target { outline:2px dashed var(--accent); outline-offset:-4px; }
+		#statusBar { font-size:.6rem; padding:.25rem .5rem; background:var(--panel-alt); border-top:1px solid var(--border); display:flex; gap:1rem; }
+		.warn { color:var(--warn); }
+		.ok { color:var(--ok); }
+		::-webkit-scrollbar { width:10px; height:10px; }
+		::-webkit-scrollbar-track { background:var(--panel); }
+		::-webkit-scrollbar-thumb { background:var(--scrollbar-thumb); border-radius:6px; border:2px solid var(--panel); }
+		#helpToggle { margin-left:auto; }
+		dialog { background:var(--panel); border:1px solid var(--border); color:var(--text); border-radius:8px; padding:1rem 1.25rem; max-width:780px; width:clamp(300px,80vw,780px); }
+		dialog::backdrop { backdrop-filter:blur(4px); background:#0008; }
+		dialog h2 { margin-top:0; font-size:1rem; }
+		code.inline { background:#18212b; padding:2px 4px; border-radius:4px; font-size:.75rem; }
+		.pill { background:#152331; padding:2px 6px; border-radius:12px; font-size:.55rem; border:1px solid #2c3c4d; }
+		.flex { display:flex; }
+		.gap { gap:.5rem; }
+		.wrap { flex-wrap:wrap; }
+		.danger-text { color:var(--danger); }
+		.muted { color:var(--muted); }
+		#filterGroup { width:100%; }
+		.dependency-source { box-shadow:0 0 0 2px var(--accent),0 0 0 4px #3da9ff55; }
+	</style>
+</head>
+<body>
+	<header>
+		<h1>Roadmap Planner</h1>
+		<input type="file" id="jsonFile" accept="application/json" />
+		<button id="importJsonBtn">Import JSON</button>
+		<button id="exportJsonBtn" class="secondary">Export JSON</button>
+		<button id="generateMdBtn" class="secondary">Generate Markdown</button>
+		<button id="saveMdBtn" class="secondary" disabled>Download MD</button>
+		<button id="addItemBtn">+ Item</button>
+		<button id="addMilestoneBtn">+ Milestone</button>
+		<button id="resetBtn" class="danger">Reset</button>
+		<button id="helpToggle" class="secondary">Help</button>
+	</header>
+	<main>
+		<div id="boardsWrapper" style="flex:1; position:relative; display:flex;">
+			<!-- Graph canvas removed (no arrows shown) -->
+			<div id="boards"></div>
+		</div>
+		<aside id="sidePanel">
+			<header style="padding:.6rem .75rem;">Selected Item</header>
+			<div id="editor">
+				<div class="muted" id="noSelectionMsg">Select an item to edit details & dependencies.</div>
+				<section id="itemDetailsSection" hidden>
+					<h3>Details</h3>
+					<label>Title<br/><input id="itemTitleInput" /></label>
+					<label>Feature Group<br/><input id="itemFeatureGroupInput" /></label>
+					<label>Issue #<br/><input id="itemIssueInput" placeholder="e.g. 123" /></label>
+					<label>Milestone<br/>
+						<select id="itemMilestoneSelect"></select>
+					</label>
+					<button id="deleteItemBtn" class="danger small">Delete Item</button>
+				</section>
+				<section id="dependenciesSection" hidden>
+					<h3>Dependencies</h3>
+					<input id="itemsSearch" placeholder="Filter items..." />
+					<div class="list-scroll" id="dependencyList"></div>
+					<div class="dependency-cycle" id="cycleWarning" hidden>Cycle detected!</div>
+					<small class="muted">Tip: Use the checkboxes below to manage dependencies.</small>
+				</section>
+				<section>
+					<h3>Filters</h3>
+					<input id="filterGroup" placeholder="Filter by feature group..." />
+					<button id="clearFiltersBtn" class="small secondary">Clear Filters</button>
+				</section>
+				<section>
+					<h3>Markdown</h3>
+					<textarea id="markdownOutput" placeholder="Generated markdown output will appear here..." readonly></textarea>
+				</section>
+			</div>
+			<div id="statusBar"><span id="statusItems">0 items</span><span id="statusMilestones">0 milestones</span><span id="statusSaved" class="muted">Not saved</span></div>
+		</aside>
+	</main>
+	<dialog id="helpDialog">
+		<h2>Roadmap Planner Help</h2>
+		<p>This tool lets you organize backlog items into milestones, manage dependencies, and export a markdown roadmap (with a Mermaid graph).</p>
+		<ul>
+			<li><strong>Import JSON:</strong> Provide an array of objects with keys <code class="inline">title</code>, <code class="inline">milestone</code> (optional), <code class="inline">featureGroup</code> (optional), and optionally <code class="inline">dependencies</code> (array of titles or IDs).</li>
+			<li>Drag items between columns to assign/change milestones.</li>
+			<!-- Removed instruction about round node handle (feature deprecated) -->
+			<li>Select an item to edit its fields and dependencies with checkboxes.</li>
+			<li>Generate markdown to copy or download with Mermaid graph.</li>
+			<li>State auto-saves in localStorage.</li>
+		</ul>
+		<p>Example JSON input:</p>
+<pre style="background:#101820;padding:.75rem;border:1px solid #2d3b49;border-radius:6px;font-size:.7rem;white-space:pre-wrap;">[
+	{"title":"Routing Engine","featureGroup":"Routing","milestone":"1.1"},
+	{"title":"Route Planner UI","featureGroup":"Routing","milestone":"1.2","dependencies":["Routing Engine"]},
+	{"title":"Map Render Service","featureGroup":"Map"},
+	{"title":"Map Edit Service","featureGroup":"Map","dependencies":["Map Render Service"]}
+]</pre>
+		<div style="display:flex; justify-content:flex-end; gap:.5rem; margin-top:1rem;">
+			<button id="closeHelpBtn" class="secondary">Close</button>
+		</div>
+	</dialog>
+	<dialog id="newItemDialog">
+		<h2>New Roadmap Item</h2>
+		<form id="newItemForm" method="dialog" style="display:flex; flex-direction:column; gap:.75rem;">
+			<label style="display:flex; flex-direction:column; gap:.25rem; font-size:.8rem;">Title *
+				<input id="newItemTitle" required placeholder="e.g. Polygon Labels" />
+			</label>
+			<label style="display:flex; flex-direction:column; gap:.25rem; font-size:.8rem;">Feature Group
+				<input id="newItemFeatureGroup" placeholder="e.g. Map" />
+			</label>
+			<label style="display:flex; flex-direction:column; gap:.25rem; font-size:.8rem;">Issue #
+				<input id="newItemIssueNumber" placeholder="e.g. 456" />
+			</label>
+			<label style="display:flex; flex-direction:column; gap:.25rem; font-size:.8rem;">Milestone
+				<select id="newItemMilestoneSelect"></select>
+			</label>
+			<label style="display:flex; flex-direction:column; gap:.25rem; font-size:.8rem;">Or New Milestone
+				<input id="newItemMilestoneCustom" placeholder="e.g. 1.4" />
+			</label>
+			<div class="muted" style="font-size:.65rem;">Leave milestone blank for Backlog. Duplicate titles not allowed.</div>
+			<div style="display:flex; justify-content:flex-end; gap:.5rem; margin-top:.5rem;">
+				<button type="button" id="cancelNewItemBtn" class="secondary">Cancel</button>
+				<button type="submit" id="createNewItemBtn">Create</button>
+			</div>
+		</form>
+	</dialog>
+	<script>
+	(function(){
+		// Data Model
+		/** @type {Array<{id:string,title:string,featureGroup?:string,milestone?:string,dependencies:string[],issueNumber:number|null}>} */
+		let items = [];
+		/** @type {Array<string>} */
+		let milestones = [];
+		let selectedId = null;
+		const LS_KEY = 'roadmapPlannerStateV1';
+		const el = id=>document.getElementById(id);
+		const boardsEl = el('boards');
+		// graphCanvas removed (no dependency arrows displayed)
+		const statusItems = el('statusItems');
+		const statusMilestones = el('statusMilestones');
+		const statusSaved = el('statusSaved');
+		const itemTitleInput = el('itemTitleInput');
+		const itemFeatureGroupInput = el('itemFeatureGroupInput');
+		const itemMilestoneSelect = el('itemMilestoneSelect');
+		const itemIssueInput = el('itemIssueInput');
+		const dependencyList = el('dependencyList');
+		const cycleWarning = el('cycleWarning');
+		const filterGroupInput = el('filterGroup');
+		const markdownOutput = el('markdownOutput');
+		const saveMdBtn = el('saveMdBtn');
+		const jsonFileInput = el('jsonFile');
+		const noSelectionMsg = el('noSelectionMsg');
+		const itemDetailsSection = el('itemDetailsSection');
+		const dependenciesSection = el('dependenciesSection');
+		// Removed drag & click dependency creation UI (handles removed)
+		let filterFeatureGroup = '';
+		// Utility
+		const uuid = ()=>'id_'+Math.random().toString(36).slice(2,11);
+		const slug = s=>s.toLowerCase().replace(/[^a-z0-9]+/g,'_');
+		function saveState(){
+			localStorage.setItem(LS_KEY,JSON.stringify({items,milestones}));
+			statusSaved.textContent='Saved';
+			statusSaved.classList.add('ok');
+			setTimeout(()=>{statusSaved.classList.remove('ok');},1500);
+		}
+		function loadState(){
+			const raw=localStorage.getItem(LS_KEY);
+			if(!raw) return false;
+			try{ const parsed=JSON.parse(raw); if(parsed.items && parsed.milestones){ items=parsed.items; milestones=parsed.milestones; return true; } }catch(e){ console.warn('Load failed',e);} return false;
+		}
+		function resetState(){ items=[]; milestones=[]; selectedId=null; saveState(); renderAll(); }
+		// Rendering
+		function renderAll(){
+			renderMilestones();
+			renderItems();
+			renderSelection();
+			drawGraph();
+			updateStatus();
+		}
+		function updateStatus(){ statusItems.textContent=items.length+' items'; statusMilestones.textContent=milestones.length+' milestones'; }
+		function renderMilestones(){
+			// ensure milestone ordering stable
+			milestones.sort( (a,b)=> naturalCompare(a,b) );
+		}
+		function naturalCompare(a,b){
+			// compare numeric dot versions else string
+			const ap=a.split('.').map(x=>x.padStart(3,'0')).join('.');
+			const bp=b.split('.').map(x=>x.padStart(3,'0')).join('.');
+			return ap.localeCompare(bp,undefined,{numeric:true,sensitivity:'base'});
+		}
+		function getMilestoneColumns(){ return ['Backlog', ...milestones]; }
+		function renderItems(){
+			boardsEl.innerHTML='';
+			const cols=getMilestoneColumns();
+			cols.forEach(ms=>{
+				const col=document.createElement('div');
+				col.className='column';
+				col.dataset.milestone= ms==='Backlog'?'':ms;
+				const header=document.createElement('div');
+				header.className='column-header';
+				if(ms==='Backlog') header.innerHTML='<strong>Backlog</strong>';
+				else {
+					const input=document.createElement('input');
+						input.value=ms; input.title='Edit milestone name';
+						input.onchange=()=>{ const i=milestones.indexOf(ms); if(i>-1){ milestones[i]=input.value.trim(); saveState(); renderAll(); } };
+						header.appendChild(input);
+						const del=document.createElement('button'); del.textContent='×'; del.className='small danger'; del.title='Delete milestone'; del.onclick=()=>{ if(confirm('Delete milestone '+ms+'? Items will move to Backlog.')){ items.forEach(it=>{ if(it.milestone===ms) delete it.milestone; }); milestones=milestones.filter(m=>m!==ms); saveState(); renderAll(); }}; header.appendChild(del);
+				}
+				col.appendChild(header);
+				const itemsWrap=document.createElement('div'); itemsWrap.className='items'; itemsWrap.addEventListener('dragover',e=>{ e.preventDefault(); col.classList.add('milestone-drop-target');}); itemsWrap.addEventListener('dragleave',()=>col.classList.remove('milestone-drop-target'));
+				itemsWrap.addEventListener('drop',e=>{ e.preventDefault(); col.classList.remove('milestone-drop-target'); const id=e.dataTransfer.getData('text/item'); const it=items.find(i=>i.id===id); if(it){ if(ms==='Backlog') delete it.milestone; else it.milestone=ms; saveState(); renderAll(); }});
+				items.filter(it=> (it.milestone||'')===(ms==='Backlog'?'':ms)).filter(it=> !filterFeatureGroup || (it.featureGroup||'').toLowerCase().includes(filterFeatureGroup)).forEach(it=> itemsWrap.appendChild(renderItemCard(it)) );
+				col.appendChild(itemsWrap);
+				boardsEl.appendChild(col);
+			});
+		}
+		function renderItemCard(it){
+			const card=document.createElement('div');
+			card.className='item'+(it.milestone?'':' backlog');
+			if(selectedId===it.id) card.classList.add('selected');
+			card.draggable=true;
+			card.addEventListener('dragstart',e=>{ card.classList.add('dragging'); e.dataTransfer.setData('text/item',it.id); });
+			card.addEventListener('dragend',()=>card.classList.remove('dragging'));
+			card.onclick=()=>{ selectedId=it.id; renderSelection(); renderItems(); drawGraph(); };
+			const title=document.createElement('h4'); title.textContent=it.title; card.appendChild(title);
+			const meta=document.createElement('div'); meta.className='meta';
+			if(it.issueNumber!=null){ const iss=document.createElement('span'); iss.className='tag'; iss.textContent='#'+it.issueNumber; meta.appendChild(iss); }
+			if(it.featureGroup){ const fg=document.createElement('span'); fg.className='tag'; fg.textContent=it.featureGroup; meta.appendChild(fg); }
+			card.appendChild(meta);
+			if(it.dependencies?.length){ const depWrap=document.createElement('div'); depWrap.className='dep-badges'; it.dependencies.forEach(did=>{ const d=items.find(i=>i.id===did); if(d){ const span=document.createElement('span'); span.textContent=d.title; span.title='Click to remove dependency'; span.onclick=(ev)=>{ ev.stopPropagation(); toggleDependency(it.id,did,true); }; depWrap.appendChild(span); } }); card.appendChild(depWrap);} else { const nob=document.createElement('div'); nob.style.minHeight='10px'; card.appendChild(nob);} 
+			return card;
+		}
+		function renderSelection(){
+			if(!selectedId){ noSelectionMsg.hidden=false; itemDetailsSection.hidden=true; dependenciesSection.hidden=true; return; }
+			const it=items.find(i=>i.id===selectedId); if(!it){ selectedId=null; renderSelection(); return; }
+			noSelectionMsg.hidden=true; itemDetailsSection.hidden=false; dependenciesSection.hidden=false;
+			itemTitleInput.value=it.title; itemFeatureGroupInput.value=it.featureGroup||''; itemIssueInput.value= it.issueNumber!=null ? it.issueNumber : '';
+			// Milestone select populate
+			itemMilestoneSelect.innerHTML='<option value="">(Backlog)</option>'+milestones.map(m=>`<option value="${m}">${m}</option>`).join('');
+			itemMilestoneSelect.value=it.milestone||'';
+			// dependency list
+			const filter=(el('itemsSearch').value||'').toLowerCase();
+			dependencyList.innerHTML='';
+			items.filter(o=>o.id!==it.id && (!filter || o.title.toLowerCase().includes(filter) || (o.featureGroup||'').toLowerCase().includes(filter))).forEach(o=>{
+				const row=document.createElement('label'); row.className='checkbox-row';
+				const cb=document.createElement('input'); cb.type='checkbox'; cb.checked=it.dependencies.includes(o.id); cb.onchange=()=>{ toggleDependency(it.id,o.id,!cb.checked); };
+				row.appendChild(cb);
+				const span=document.createElement('span'); span.textContent=o.title+(o.featureGroup?` (${o.featureGroup})`:'' ); row.appendChild(span);
+				dependencyList.appendChild(row);
+			});
+			// cycle detect
+			cycleWarning.hidden=!detectCycle();
+		}
+		function toggleDependency(fromId,toId, remove){
+			const from=items.find(i=>i.id===fromId); if(!from) return;
+			if(remove){ from.dependencies=from.dependencies.filter(id=>id!==toId); }
+			else { if(!from.dependencies.includes(toId)){ from.dependencies.push(toId);} }
+			if(detectCycle()){ // revert
+				if(remove){ from.dependencies.push(toId);} else { from.dependencies=from.dependencies.filter(id=>id!==toId);} alert('Adding this dependency creates a cycle.');
+			}
+			saveState(); renderSelection(); renderItems(); drawGraph();
+		}
+		function detectCycle(){
+			// simple DFS
+			const visited=new Set(); const stack=new Set();
+			const map=new Map(items.map(i=>[i.id,i.dependencies]));
+			function visit(id){ if(stack.has(id)) return true; if(visited.has(id)) return false; visited.add(id); stack.add(id); const deps=map.get(id)||[]; for(const d of deps){ if(visit(d)) return true; } stack.delete(id); return false; }
+			return items.some(i=>visit(i.id));
+		}
+		// Graph drawing disabled (no visual arrows)
+		function drawGraph(){ /* intentionally blank */ }
+		function findItemIdByTitleOrId(text){ const it=items.find(i=>i.title===text || i.id===text); return it?it.id:null; }
+		// Dependency handle creation removed, functions deprecated
+		// Markdown generation
+		function generateMarkdown(){
+			const lines=['# Roadmap Timeline',''];
+			const byMs={}; items.forEach(it=>{ const ms=it.milestone||'Backlog'; (byMs[ms]=byMs[ms]||[]).push(it); });
+			const ordered=[...Object.keys(byMs).filter(k=>'Backlog'!==k).sort(naturalCompare)];
+			if(byMs['Backlog']) ordered.unshift('Backlog');
+			ordered.forEach(ms=>{ lines.push('## '+ms); byMs[ms].sort((a,b)=>a.title.localeCompare(b.title)); byMs[ms].forEach(it=>{ const deps=it.dependencies.map(id=> items.find(i=>i.id===id)?.title || id); lines.push(`- ${escapeMd(it.title)}${it.featureGroup?` _(Group: ${escapeMd(it.featureGroup)})_`:''}${deps.length?` (depends: ${deps.map(escapeMd).join(', ')})`:''}`); }); lines.push(''); });
+			// Mermaid graph
+			lines.push('## Dependency Graph');
+			lines.push('```mermaid');
+			lines.push('graph LR');
+			items.forEach((it,idx)=>{ const nodeId='N'+idx; it._nodeId=nodeId; lines.push(`${nodeId}[${escapeMd(it.title)}]`); });
+			items.forEach(it=>{ it.dependencies.forEach(depId=>{ const d=items.find(i=>i.id===depId); if(d){ lines.push(`${it._nodeId} --> ${d._nodeId}`); } }); });
+			lines.push('```');
+			markdownOutput.value=lines.join('\n');
+			saveMdBtn.disabled=false;
+		}
+		function escapeMd(s){ return s.replace(/</g,'&lt;').replace(/>/g,'&gt;'); }
+		function downloadMarkdown(){ const blob=new Blob([markdownOutput.value],{type:'text/markdown'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='roadmap.md'; a.click(); URL.revokeObjectURL(a.href); }
+		// Import / Export
+		function importJson(text){
+			try { const data=JSON.parse(text); if(!Array.isArray(data)) throw new Error('Root must be array');
+				const titleToId=new Map();
+				items=[]; milestones=[];
+				data.forEach(obj=>{ const title=obj.title||obj.Title; if(!title) return; const id=uuid(); const milestone=(obj.milestone||obj.Milestone||'').trim(); if(milestone && !milestones.includes(milestone)) milestones.push(milestone); const issueRaw = obj.issueNumber ?? obj.IssueNumber; const issueNumber = issueRaw===null||issueRaw===undefined||issueRaw==='' ? null : (isNaN(Number(issueRaw))? null : Number(issueRaw)); items.push({ id, title:title.trim(), featureGroup:(obj.featureGroup||obj.FeatureGroup||'').trim()||undefined, milestone: milestone||undefined, dependencies: [], issueNumber }); titleToId.set(title.trim(),id); });
+				// second pass dependencies
+				data.forEach(obj=>{ const title=(obj.title||obj.Title||'').trim(); const fromId=titleToId.get(title); if(!fromId) return; const depTitles=obj.dependencies||obj.Dependencies; if(Array.isArray(depTitles)){ depTitles.forEach(dt=>{ const toId=titleToId.get(dt); if(toId){ const it=items.find(i=>i.id===fromId); if(it && !it.dependencies.includes(toId)) it.dependencies.push(toId); } }); } });
+				saveState(); renderAll(); alert('Imported '+items.length+' items.');
+			}catch(e){ alert('Import failed: '+e.message); }
+		}
+		function exportJson(){ const data=items.map(it=>({ title:it.title, featureGroup:it.featureGroup, milestone:it.milestone, dependencies: it.dependencies.map(id=> items.find(i=>i.id===id)?.title || id), issueNumber: it.issueNumber==null? null : it.issueNumber })); const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'}); const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download='roadmap.json'; a.click(); URL.revokeObjectURL(a.href); }
+		// Event bindings
+		el('addMilestoneBtn').onclick=()=>{ const name=prompt('Milestone name (e.g., 1.3)'); if(!name) return; if(!milestones.includes(name.trim())){ milestones.push(name.trim()); saveState(); renderAll(); } };
+		el('generateMdBtn').onclick=generateMarkdown;
+		saveMdBtn.onclick=downloadMarkdown;
+		el('exportJsonBtn').onclick=exportJson;
+		el('importJsonBtn').onclick=()=>{ const f=jsonFileInput.files?.[0]; if(!f){ alert('Choose a JSON file first.'); return; } const reader=new FileReader(); reader.onload=e=> importJson(e.target.result); reader.readAsText(f); };
+		el('resetBtn').onclick=()=>{ if(confirm('Reset all data?')){ localStorage.removeItem(LS_KEY); resetState(); } };
+		el('itemsSearch').oninput=renderSelection;
+		filterGroupInput.oninput=()=>{ filterFeatureGroup=filterGroupInput.value.trim().toLowerCase(); renderItems(); drawGraph(); };
+		el('clearFiltersBtn').onclick=()=>{ filterFeatureGroup=''; filterGroupInput.value=''; renderItems(); drawGraph(); };
+		itemTitleInput.onchange=()=>{ const it=items.find(i=>i.id===selectedId); if(it){ it.title=itemTitleInput.value.trim()||it.title; saveState(); renderAll(); } };
+		itemFeatureGroupInput.onchange=()=>{ const it=items.find(i=>i.id===selectedId); if(it){ it.featureGroup=itemFeatureGroupInput.value.trim()||undefined; saveState(); renderAll(); } };
+		itemIssueInput.onchange=()=>{ const it=items.find(i=>i.id===selectedId); if(it){ const v=itemIssueInput.value.trim(); it.issueNumber= v? (isNaN(Number(v))? null : Number(v)) : null; saveState(); renderItems(); } };
+		itemMilestoneSelect.onchange=()=>{ const it=items.find(i=>i.id===selectedId); if(it){ const v=itemMilestoneSelect.value||undefined; it.milestone=v; if(v && !milestones.includes(v)) milestones.push(v); saveState(); renderAll(); } };
+		el('deleteItemBtn').onclick=()=>{ if(!selectedId) return; if(confirm('Delete this item?')){ items=items.filter(i=>i.id!==selectedId); items.forEach(i=> i.dependencies=i.dependencies.filter(d=>d!==selectedId)); selectedId=null; saveState(); renderAll(); } };
+		document.addEventListener('keydown',e=>{ if(e.key==='Delete' && selectedId){ const active=document.activeElement; if(active && ['INPUT','TEXTAREA'].includes(active.tagName)) return; el('deleteItemBtn').click(); } });
+		// click background to deselect
+		boardsEl.addEventListener('click',e=>{ if(e.target===boardsEl){ selectedId=null; renderSelection(); renderItems(); drawGraph(); } });
+		// Double click blank area to add item
+		boardsEl.addEventListener('dblclick',e=>{ if(e.target.classList.contains('items')){ const ms=e.target.parentElement.dataset.milestone||undefined; const title=prompt('New item title'); if(!title) return; const it={ id:uuid(), title:title.trim(), featureGroup:undefined, milestone:ms, dependencies:[], issueNumber:null }; items.push(it); selectedId=it.id; saveState(); renderAll(); } });
+		// Help dialog
+		const helpDialog=el('helpDialog'); el('helpToggle').onclick=()=>helpDialog.showModal(); el('closeHelpBtn').onclick=()=>helpDialog.close();
+		// New Item dialog
+		const newItemDialog=el('newItemDialog');
+		const newItemTitle=el('newItemTitle');
+		const newItemFeatureGroup=el('newItemFeatureGroup');
+		const newItemMilestoneSelect=el('newItemMilestoneSelect');
+		const newItemMilestoneCustom=el('newItemMilestoneCustom');
+		const newItemIssueNumber=el('newItemIssueNumber');
+		function openNewItemDialog(){
+			// populate milestone list each time
+			newItemMilestoneSelect.innerHTML='<option value="">(Backlog)</option>'+milestones.map(m=>`<option value="${m}">${m}</option>`).join('');
+			newItemTitle.value=''; newItemFeatureGroup.value=''; newItemMilestoneSelect.value=''; newItemMilestoneCustom.value=''; newItemIssueNumber.value='';
+			newItemDialog.showModal();
+			setTimeout(()=>newItemTitle.focus(),50);
+		}
+		el('addItemBtn').onclick=openNewItemDialog;
+		el('cancelNewItemBtn').onclick=()=> newItemDialog.close();
+		el('newItemForm').onsubmit=(e)=>{ e.preventDefault(); const title=newItemTitle.value.trim(); if(!title){ alert('Title required'); return; } if(items.some(i=>i.title.toLowerCase()===title.toLowerCase())){ alert('An item with that title already exists.'); return; }
+			let milestone=newItemMilestoneCustom.value.trim()||newItemMilestoneSelect.value.trim(); if(milestone=== '') milestone=undefined; if(milestone && !milestones.includes(milestone)) milestones.push(milestone);
+			const featureGroup=newItemFeatureGroup.value.trim()||undefined;
+			const rawIssue=newItemIssueNumber.value.trim(); const issueNumber= rawIssue? (isNaN(Number(rawIssue))? null : Number(rawIssue)) : null;
+			const it={ id:uuid(), title, featureGroup, milestone, dependencies:[], issueNumber };
+			items.push(it); selectedId=it.id; saveState(); renderAll(); newItemDialog.close(); };
+		// Markdown auto scroll sync (no editing) - no op for now.
+		function ensureDefaults(){ if(!items.length){ // load sample
+				items=[ {id:uuid(),title:'Map Render Service',featureGroup:'Map',milestone:'1.1',dependencies:[],issueNumber:null}, {id:uuid(),title:'Map Edit Service',featureGroup:'Map',milestone:'1.2',dependencies:[],issueNumber:null}, {id:uuid(),title:'Routing Engine',featureGroup:'Routing',milestone:'1.1',dependencies:[],issueNumber:101}, {id:uuid(),title:'Route Planner UI',featureGroup:'Routing',milestone:'1.3',dependencies:[],issueNumber:102}, ];
+				// add dependencies
+				const me=items.find(i=>i.title==='Map Edit Service'); const mr=items.find(i=>i.title==='Map Render Service'); if(me&&mr) me.dependencies.push(mr.id);
+				const rp=items.find(i=>i.title==='Route Planner UI'); const re=items.find(i=>i.title==='Routing Engine'); if(rp&&re) rp.dependencies.push(re.id);
+				milestones=['1.1','1.2','1.3'];
+				saveState();
+			} }
+		// Initialize
+		loadState(); ensureDefaults(); renderAll();
+		// expose for debugging
+		window.roadmapPlanner={ getState:()=>({items,milestones}), importJson, exportJson, generateMarkdown };
+	})();
+	</script>
+</body>
+</html>

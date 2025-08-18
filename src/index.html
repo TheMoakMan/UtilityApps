@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Utility Apps — Catalog</title>
+  <meta name="description" content="A tiny hub for Movie Roulette, Roadmap Planner, and Tickwise." />
+  <style>
+    :root{
+      --bg:#0a0d14; --bg2:#0e1320; --text:#e9f0ff; --muted:#a8b5d6; --border:#1b2436;
+      --radius:18px; --shadow: 0 14px 40px rgba(0,0,0,.45);
+      /* Palettes to echo the individual apps */
+      --roulette-1:#7c5cff; --roulette-2:#39f; --roulette-3:#00e6a8;
+      --planner-1:#3da9ff; --planner-2:#1c2129; --planner-3:#242b35;
+      --tickwise-1:#5dd0ff; --tickwise-2:#9bffb4; --tickwise-3:#121821;
+    }
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0; color:var(--text);
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Inter, "Helvetica Neue", Arial, "Noto Sans", "Apple Color Emoji", "Segoe UI Emoji";
+      background:
+        radial-gradient(1200px 700px at -10% -10%, #7c5cff1f, transparent 60%),
+        radial-gradient(1000px 600px at 110% 10%, #00e6a81a, transparent 60%),
+        radial-gradient(900px 700px at 50% 140%, #3da9ff14, transparent 60%),
+        linear-gradient(180deg, var(--bg), var(--bg2));
+    }
+    header{
+      max-width:1200px; margin:32px auto 10px; padding:0 20px; display:flex; align-items:center; justify-content:space-between; gap:16px; flex-wrap:wrap;
+    }
+    .brand{display:flex; align-items:center; gap:14px}
+    .orb{
+      width:52px; height:52px; border-radius:50%; position:relative; overflow:hidden;
+      background: conic-gradient(from 230deg, var(--roulette-1), var(--roulette-2), var(--tickwise-2), var(--roulette-1));
+      box-shadow: inset 0 0 30px #ffffff1a, 0 0 28px #7c5cff44, 0 0 28px #00e6a844;
+    }
+    .orb::after{content:""; position:absolute; inset:8px; border-radius:50%; background:radial-gradient(circle at 30% 30%, #fff8, transparent 45%)}
+    h1{margin:0; font-size:1.9rem; letter-spacing:.2px}
+    h1 span{background:linear-gradient(90deg,#fff,#cdd9ff); -webkit-background-clip:text; background-clip:text; color:transparent}
+    .tagline{color:var(--muted)}
+
+    main{max-width:1200px; margin:10px auto 80px; padding:0 20px}
+
+    .splash{
+      display:grid; grid-template-columns: 1.1fr .9fr; gap:20px; align-items:center; margin-bottom:20px;
+    }
+    @media (max-width: 980px){ .splash{grid-template-columns:1fr} }
+
+    .hero{
+      background: linear-gradient(180deg, #111728d0, #0f1424d0);
+      border:1px solid #ffffff14; border-radius:24px; padding:20px; box-shadow: var(--shadow); backdrop-filter: blur(8px);
+    }
+    .hero h2{margin:0 0 8px 0; font-size:1.3rem}
+    .hero p{margin:0; color:#cbd7ff}
+
+    .cards{display:grid; grid-template-columns: repeat(3, minmax(240px, 1fr)); gap:16px}
+    @media (max-width: 980px){ .cards{grid-template-columns: 1fr} }
+
+    a.app-card{ text-decoration:none; color:inherit; display:block; position:relative; border-radius:var(--radius); overflow:hidden; border:1px solid var(--border); background:#0f1524; box-shadow: var(--shadow); min-height:200px; transition: transform .12s ease, box-shadow .2s ease, border-color .2s ease, filter .2s ease; }
+    a.app-card:hover{ transform: translateY(-3px); filter: brightness(1.03); box-shadow: 0 18px 46px rgba(0,0,0,.55); }
+    a.app-card:focus-visible{ outline:2px solid #9bb7ff; outline-offset:2px }
+
+    .card-content{ position:relative; z-index:2; padding:16px; display:flex; flex-direction:column; gap:10px; height:100%; }
+    .card-top{ display:flex; align-items:center; justify-content:space-between; gap:10px; }
+    .app-title{ font-weight:800; letter-spacing:.2px; }
+    .chip{ display:inline-flex; align-items:center; gap:6px; padding:6px 10px; border-radius:999px; font-size:.78rem; background:#151c2b; color:#d9e6ff; border:1px solid #ffffff22 }
+    .card-desc{ color:#cfe0ff; line-height:1.5; font-size:.95rem }
+    .open{ margin-top:auto; align-self:flex-start; background:#11182a; color:#dfe8ff; border:1px solid #ffffff2a; padding:10px 12px; border-radius:12px; font-weight:700 }
+
+    /* Roulette styling */
+    .app-card--roulette{ background: linear-gradient(180deg,#121827,#0f1526); border-color:#7c5cff44; }
+    .app-card--roulette .badge{ width:38px; height:38px; border-radius:50%; background: conic-gradient(from 220deg, var(--roulette-1), var(--roulette-2), var(--roulette-3), var(--roulette-1)); box-shadow: inset 0 0 24px #7c5cff66, 0 0 20px #00e6a833; display:grid; place-items:center; color:#fff }
+    .app-card--roulette .card-bg{ position:absolute; inset:-20%; background: radial-gradient(60% 60% at 100% 0, #7c5cff22, transparent 60%), radial-gradient(60% 60% at 0 100%, #00e6a822, transparent 60%); filter: blur(12px); z-index:1 }
+    .app-card--roulette .app-title{ background:linear-gradient(90deg,#fff,#b8c4ff); -webkit-background-clip:text; background-clip:text; color:transparent }
+
+    /* Planner styling */
+    .app-card--planner{ background: linear-gradient(180deg, var(--planner-3), var(--planner-2)); border-color:#3da9ff44 }
+    .app-card--planner .badge{ width:38px; height:38px; border-radius:10px; background: linear-gradient(180deg,#2a3442,#1f2732); display:grid; place-items:center; color:#9cd4ff; border:1px solid #2f3b4c; box-shadow: inset 0 0 14px #0008 }
+    .app-card--planner .card-bg{ position:absolute; inset:0; background: repeating-linear-gradient(135deg, #19202b55 0 14px, #0f141c55 14px 28px); opacity:.28; z-index:1 }
+    .app-card--planner .chip{ background:#16212a; border-color:#2a3a49 }
+
+    /* Tickwise styling */
+    .app-card--tickwise{ background: linear-gradient(180deg,#121821,#0d1420); border-color:#5dd0ff44 }
+    .app-card--tickwise .badge{ width:38px; height:38px; border-radius:50%; background: radial-gradient(circle at 30% 30%, var(--tickwise-2), var(--tickwise-1) 60%, #58cced 100%); display:grid; place-items:center; box-shadow: inset 0 0 10px rgba(255,255,255,.2), 0 6px 16px rgba(0,0,0,.4) }
+    .app-card--tickwise .card-bg{ position:absolute; inset:-10%; background: radial-gradient(70% 70% at 50% 20%, #5dd0ff1f, transparent 60%), radial-gradient(70% 70% at 20% 90%, #9bffb41a, transparent 60%); z-index:1 }
+
+    /* Subtle floating shapes */
+    .floaty{ position:absolute; pointer-events:none; z-index:0; opacity:.6; filter: blur(8px); }
+    .f1{ width:220px; height:220px; top:-60px; right:6%; background: radial-gradient(circle, #7c5cff33, transparent 70%); }
+    .f2{ width:260px; height:260px; bottom:-80px; left:4%; background: radial-gradient(circle, #00e6a82b, transparent 70%); }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="brand">
+      <div class="orb" aria-hidden="true"></div>
+      <div>
+  <h1><span>Utility Apps</span></h1>
+  <div class="tagline">Handy one‑page apps for anyone to use. A growing catalog over time.</div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="splash">
+      <div class="hero">
+  <h2>Welcome</h2>
+  <p>Browse simple, single‑file web apps. Everything runs locally in your browser — no signup, no backend. More apps will be added over time.</p>
+      </div>
+      <div class="hero" style="display:grid; grid-template-columns:repeat(3,1fr); gap:10px; align-items:center; text-align:center">
+        <div class="chip" style="justify-self:center">🎬 Movie picks</div>
+        <div class="chip" style="justify-self:center">🗺️ Roadmaps</div>
+        <div class="chip" style="justify-self:center">🦟 Health log</div>
+      </div>
+    </section>
+
+    <section class="cards">
+  <a class="app-card app-card--roulette" href="./movieroulette/movieroulette.html">
+        <div class="card-bg" aria-hidden="true"></div>
+        <div class="card-content">
+          <div class="card-top">
+            <div class="badge">🍿</div>
+    <span class="chip">Family movie picker</span>
+          </div>
+          <div class="app-title">Movie Roulette</div>
+          <div class="card-desc">Pick by vibe, not title. Get three mystery descriptions and click to reveal where to watch.</div>
+          <div class="open">Open →</div>
+        </div>
+      </a>
+
+  <a class="app-card app-card--planner" href="./planner/roadmapplanner.html">
+        <div class="card-bg" aria-hidden="true"></div>
+        <div class="card-content">
+          <div class="card-top">
+            <div class="badge">🗂️</div>
+    <span class="chip">Milestones & dependencies</span>
+          </div>
+            <div class="app-title">Roadmap Planner</div>
+            <div class="card-desc">Organize items into milestones, manage dependencies, and export Markdown with a Mermaid graph.</div>
+            <div class="open">Open →</div>
+        </div>
+      </a>
+
+  <a class="app-card app-card--tickwise" href="./tickwise/tickwise.html">
+        <div class="card-bg" aria-hidden="true"></div>
+        <div class="card-content">
+          <div class="card-top">
+            <div class="badge" title="Mosquito">🦟</div>
+    <span class="chip">Offline friendly</span>
+          </div>
+            <div class="app-title">Tickwise</div>
+            <div class="card-desc">Local-only tracker for Lyme & tick-borne illness symptoms, triggers, meds, and exports.</div>
+            <div class="open">Open →</div>
+        </div>
+      </a>
+    </section>
+  </main>
+
+  <div class="floaty f1" aria-hidden="true"></div>
+  <div class="floaty f2" aria-hidden="true"></div>
+</body>
+</html>

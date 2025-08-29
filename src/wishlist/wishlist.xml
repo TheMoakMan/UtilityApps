@@ -1,0 +1,122 @@
+<AppSpec name="WishlistPriorityApp" version="1.1">
+  <Summary>
+    Single-page HTML + JavaScript wishlist app with modern UI, mobile-first design,
+    popup dialogs for management, and white/blue theming.
+  </Summary>
+
+  <Tech>
+    <Language>HTML</Language>
+    <Language>CSS</Language>
+    <Language>JavaScript</Language>
+    <Frameworks>None</Frameworks>
+    <Storage>localStorage</Storage>
+    <UIFramework optional="true">Consider lightweight CSS grid/flex utilities</UIFramework>
+  </Tech>
+
+  <UI>
+    <Theme>
+      <Color primary="#1E90FF" usage="buttons, highlights"/>
+      <Color secondary="#FFFFFF" usage="background, cards"/>
+      <Color neutral="#F4F6F8" usage="list backgrounds"/>
+      <Typography font="system-ui" size="responsive"/>
+  <IconSet library="Bootstrap Icons" version="1.11.3" cdn="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css"/>
+    </Theme>
+
+    <Layout>
+      <Guideline>Mobile-first responsive design, flexbox or grid layouts.</Guideline>
+      <Guideline>Touch-friendly buttons, minimum 44px tap targets.</Guideline>
+      <Guideline>Cards or panels with rounded corners and subtle shadows.</Guideline>
+    </Layout>
+
+    <Navigation>
+      <Bar type="top" sticky="true">
+        <Title>Family Wishlist</Title>
+        <Actions>
+          <Action name="addItem" icon="➕" opens="popupItemForm"/>
+          <Action name="manageTags" icon="🏷️" opens="popupTagForm"/>
+        </Actions>
+      </Bar>
+    </Navigation>
+
+    <Popups>
+      <Popup id="popupItemForm" title="Add / Edit Wishlist Item">
+        <Field name="itemName" type="text" required="true"/>
+        <Field name="note" type="textarea" required="false"/>
+  <Field name="relativeCost" type="number" min="1" max="5" step="1" default="3" label="Relative Cost (1-5)"/>
+        <Field name="tags" type="multiselect" source="categories"/>
+        <Action name="saveItem"/>
+        <Action name="cancel"/>
+      </Popup>
+
+      <Popup id="popupTagForm" title="Manage Tags & Priorities">
+        <Field name="tagName" type="text"/>
+        <Field name="priority" type="number" min="1" step="1"/>
+        <Action name="addTag"/>
+        <List name="tagList" editable="true" deletable="true"/>
+        <Action name="close"/>
+      </Popup>
+    </Popups>
+
+    <Section id="Filters" title="Filters">
+      <Controls>
+        <Control type="dropdown" name="tagFilter" optionsSource="categories" includeAllOption="true"/>
+      </Controls>
+    </Section>
+
+    <Section id="Wishlist" title="Wishlist Items">
+      <List name="itemList" sortedBy="rankThenDate" style="card">
+        <ItemTemplate>
+          <Card>
+            <TitleField name="displayName"/>
+            <SubField name="displayNote"/>
+            <TagChips name="displayTags"/>
+            <CostChip name="relativeCost" format="repeatSymbol" symbol="$" title="Relative Cost"/>
+            <Badge name="rank"/>
+            <Actions>
+              <Action name="editItem" opens="popupItemForm" iconClass="bi bi-pencil"/>
+              <Action name="deleteItem" iconClass="bi bi-trash"/>
+            </Actions>
+          </Card>
+        </ItemTemplate>
+      </List>
+    </Section>
+  </UI>
+
+  <Behavior>
+    <PriorityRules>
+      <Rule>Item rank = MIN(priority(tag) for each tag on the item).</Rule>
+      <Rule>Sort order: rank ASC, then dateAdded DESC.</Rule>
+    </PriorityRules>
+    <Cost>
+      <Description>Relative cost is a simple 1-5 scalar (1 = cheapest / easiest, 5 = most expensive). Represented visually as repeated "$" symbols on each card. Does NOT affect rank unless future rules specify.</Description>
+    </Cost>
+
+    <Filtering>
+      <Rule>If tagFilter != "All", show only items containing that tag.</Rule>
+    </Filtering>
+
+    <Persistence>
+      <Action>Save categories and items to localStorage on every change.</Action>
+      <Action>Load from localStorage on startup.</Action>
+    </Persistence>
+  </Behavior>
+
+  <Accessibility>
+    <Rule>Responsive tap targets, accessible modals with focus trapping.</Rule>
+    <Rule>High contrast between blue elements and white background.</Rule>
+  <Rule>Icons provided via Bootstrap Icons include accessible text labels (aria-label) where the icon alone would not suffice.</Rule>
+  </Accessibility>
+
+  <Examples>
+    <Categories>
+      <Category name="Need" priority="1"/>
+      <Category name="Upgrade" priority="2"/>
+      <Category name="Fun" priority="3"/>
+    </Categories>
+    <Items>
+      <Item name="Car tires" note="All-season set" tags="Need"/>
+      <Item name="New vacuum" note="Quiet, HEPA" tags="Need,Upgrade"/>
+      <Item name="Nintendo Switch" note="Family games" tags="Fun"/>
+    </Items>
+  </Examples>
+</AppSpec>

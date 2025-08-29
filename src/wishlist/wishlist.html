@@ -1,0 +1,416 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Family Wishlist</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+<meta name="description" content="Local-only prioritized family wishlist app" />
+<style>
+:root{
+  --blue:#1E90FF; --blue-d:#0f65b8; --bg:#ffffff; --bg-alt:#f4f6f8; --text:#0e2033; --muted:#567; --radius:18px; --shadow:0 10px 30px -6px rgba(20,60,120,.18), 0 2px 6px rgba(0,40,90,.08);
+  --focus:0 0 0 3px #fff,0 0 0 6px var(--blue);
+}
+*{box-sizing:border-box} body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,sans-serif;background:linear-gradient(180deg,#fff,#eef5fb 120%);color:var(--text);-webkit-font-smoothing:antialiased}
+header{position:sticky;top:0;z-index:50;background:linear-gradient(90deg,#fff,#f2f8ff);border-bottom:1px solid #d8e6f3;display:flex;align-items:center;justify-content:space-between;padding:10px 14px;gap:10px}
+h1{font-size:1.15rem;letter-spacing:.5px;margin:0;font-weight:700;display:flex;align-items:center;gap:8px}
+h1 span.logo{display:grid;place-items:center;width:40px;height:40px;border-radius:12px;background:var(--blue);color:#fff;font-size:1.2rem;box-shadow:0 4px 12px -2px rgba(30,144,255,.5)}
+button,select,input,textarea{font:inherit}
+button{cursor:pointer}
+.btn{background:var(--blue);color:#fff;border:1px solid var(--blue-d);padding:10px 14px;border-radius:12px;font-weight:600;display:inline-flex;align-items:center;gap:6px;box-shadow:0 4px 14px -4px rgba(30,144,255,.5);transition:.2s}
+.btn:hover{background:var(--blue-d)} .btn.alt{background:#fff;color:var(--blue);border-color:#c5dff5;box-shadow:none} .btn.alt:hover{background:#eef6ff}
+.icon-btn{background:#fff;border:1px solid #c5d9eb;width:42px;height:42px;display:grid;place-items:center;border-radius:13px;color:var(--blue);font-size:1.1rem;box-shadow:0 2px 6px #1e90ff26;transition:.18s;font-weight:600}
+.icon-btn:hover{background:#f0f7ff;border-color:#aed2f1}
+.icon-btn:focus-visible{outline:none;box-shadow:var(--focus)}
+main{max-width:1100px;margin:16px auto 140px;padding:0 16px;display:flex;flex-direction:column;gap:24px}
+.filter-bar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;background:#fff;border:1px solid #d1e1f0;padding:12px 14px;border-radius:16px;box-shadow:0 4px 14px -6px rgba(20,70,140,.12)}
+.filter-bar select{padding:10px 12px;border:1px solid #c2d6e8;border-radius:12px;background:#fff;min-width:160px}
+.empty{padding:40px 20px;text-align:center;color:var(--muted);background:#fff;border:2px dashed #cfe0f1;border-radius:24px}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:18px}
+.card{background:#fff;border:1px solid #d0e2f3;border-radius:20px;padding:16px 16px 14px;display:flex;flex-direction:column;gap:10px;position:relative;box-shadow:var(--shadow);min-height:170px}
+.card h3{margin:0;font-size:1.05rem;display:flex;align-items:center;gap:8px}
+.note{font-size:.85rem;color:#345;line-height:1.45;white-space:pre-line}
+.tags{display:flex;flex-wrap:wrap;gap:6px}
+.tag-chip{background:#eef6ff;color:#145081;padding:4px 9px;font-size:.7rem;font-weight:600;letter-spacing:.5px;border-radius:9px;border:1px solid #c2def4;text-transform:uppercase}
+.cost{background:#fff5d9;color:#7a5300;border:1px solid #f0dba2;padding:3px 8px;font-size:.7rem;border-radius:8px;font-weight:600;display:inline-flex;align-items:center;gap:4px}
+.rank-badge{position:absolute;top:-10px;right:-10px;background:var(--blue);color:#fff;font-weight:700;font-size:.9rem;width:44px;height:44px;border-radius:50%;display:grid;place-items:center;box-shadow:0 4px 14px -4px #1e90ff80}
+.actions{margin-top:auto;display:flex;gap:8px}
+.actions button{flex:1}
+.small-btn{background:#f4f8fc;border:1px solid #c8dceb;color:#145081;padding:7px 10px;border-radius:10px;font-size:.76rem;font-weight:600;display:flex;align-items:center;justify-content:center;gap:6px}
+.small-btn:hover{background:#e7f2fb}
+.small-btn.danger{background:#fff2f2;border-color:#f6c6c6;color:#a10}
+.small-btn.danger:hover{background:#ffe5e5}
+.modal-backdrop{position:fixed;inset:0;background:#0d1a2733;backdrop-filter:blur(4px);display:flex;align-items:flex-start;justify-content:center;padding:40px 20px;overflow:auto;z-index:200;animation:fade .25s}
+@media (max-width:720px){.modal-backdrop{align-items:flex-end;padding:0}}
+.modal{background:#fff; width:min(520px,100%);border-radius:28px;padding:28px 26px 30px;display:flex;flex-direction:column;gap:20px;position:relative;border:1px solid #c6dced;box-shadow:0 40px 80px -20px rgba(20,70,130,.25),0 6px 18px rgba(0,70,140,.08);animation:pop .3s}
+@media (max-width:720px){.modal{border-radius:28px 28px 0 0;max-height:85vh}}
+.modal h2{margin:0;font-size:1.25rem;letter-spacing:.5px;display:flex;align-items:center;gap:10px}
+.close-x{position:absolute;right:14px;top:14px;background:#eef4fa;border:1px solid #d1e3f2;width:42px;height:42px;border-radius:14px;font-size:1.05rem;color:#145081;display:grid;place-items:center;cursor:pointer;font-weight:600}
+.close-x:hover{background:#dfeefb}
+.form-row{display:flex;flex-direction:column;gap:6px}
+.form-row label{font-size:.75rem;font-weight:700;letter-spacing:.6px;color:#345;text-transform:uppercase}
+.form-row input[type=text], .form-row textarea, .form-row input[type=number], .form-row select{padding:11px 12px;border:1px solid #c2d6e8;border-radius:14px;background:#fff;font-size:.9rem;resize:vertical;min-height:44px}
+.form-row textarea{min-height:90px}
+.tag-multiselect{display:flex;flex-wrap:wrap;gap:8px}
+.tag-multiselect button{background:#eef6ff;border:1px solid #c2def4;color:#145081;font-size:.75rem;font-weight:600;padding:7px 12px;border-radius:999px}
+.tag-multiselect button.active{background:var(--blue);border-color:var(--blue-d);color:#fff;box-shadow:0 2px 10px -3px #1e90ff88}
+.split{display:flex;gap:16px}
+.split > .form-row{flex:1}
+.inline-actions{display:flex;gap:8px;flex-wrap:wrap}
+.tag-list{display:flex;flex-direction:column;gap:8px;max-height:250px;overflow:auto;padding-right:4px}
+.tag-item{display:flex;align-items:center;gap:10px;background:#f3f8fc;border:1px solid #cfe2f3;padding:10px 14px;border-radius:14px}
+.tag-item input{width:70px}
+.badge-priority{background:var(--blue);color:#fff;font-size:.7rem;padding:4px 8px;border-radius:8px;font-weight:600}
+.search-box{position:relative}
+.search-box input{padding-left:40px}
+.search-box .bi-search{position:absolute;left:14px;top:50%;transform:translateY(-50%);color:#5a7a95;font-size:1rem}
+footer{padding:60px 20px;color:#789;text-align:center;font-size:.75rem}
+.fade-enter{animation:fade .3s}
+@keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+@keyframes pop{from{opacity:0;transform:translateY(14px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
+:focus-visible{outline:none;box-shadow:var(--focus)}
+.hidden{display:none!important}
+</style>
+</head>
+<body>
+<header>
+  <h1><span class="logo" aria-hidden="true">🎁</span> <span>Family Wishlist</span></h1>
+  <div style="display:flex;gap:10px">
+    <button class="icon-btn" id="btnAddItem" aria-label="Add item" title="Add item"><i class="bi bi-plus-lg"></i></button>
+    <button class="icon-btn" id="btnManageTags" aria-label="Manage tags" title="Manage tags"><i class="bi bi-tags"></i></button>
+  </div>
+</header>
+<main class="container-lg">
+  <section class="filter-bar" aria-label="Filters">
+    <label style="display:flex;flex-direction:column;font-size:.65rem;font-weight:700;letter-spacing:.6px;color:#345;text-transform:uppercase;gap:4px">Tag Filter
+      <select id="tagFilter" aria-label="Filter by tag"></select>
+    </label>
+    <div class="search-box" style="flex:1;min-width:200px">
+      <i class="bi bi-search" aria-hidden="true"></i>
+      <input id="searchBox" type="text" placeholder="Search names or notes..." aria-label="Search items" style="width:100%" />
+    </div>
+    <div style="margin-left:auto;display:flex;gap:8px">
+      <button class="small-btn" id="btnExport" title="Export JSON"><i class="bi bi-download"></i> Export</button>
+      <button class="small-btn" id="btnImport" title="Import JSON"><i class="bi bi-upload"></i> Import</button>
+      <input type="file" id="importFile" accept="application/json" class="hidden" />
+    </div>
+  </section>
+  <section id="itemsSection">
+    <div id="itemGrid" class="grid" aria-live="polite"></div>
+    <div id="emptyState" class="empty hidden">No items yet. Add the first wish! 🎁</div>
+  </section>
+</main>
+<footer class="text-center text-muted py-4 small">Local-only. Data stored in your browser. v1.1</footer>
+
+<!-- Item Modal -->
+<div class="modal-backdrop hidden" id="itemModalWrap" role="dialog" aria-modal="true" aria-labelledby="itemModalTitle">
+  <div class="modal" id="itemModal">
+    <button class="close-x" data-close-item aria-label="Close"><i class="bi bi-x-lg"></i></button>
+    <h2 id="itemModalTitle"><i class="bi bi-gift"></i> <span id="itemModalMode">Add</span> Item</h2>
+    <form id="itemForm" novalidate>
+      <input type="hidden" id="itemId" />
+      <div class="form-row">
+        <label for="itemName">Name</label>
+        <input id="itemName" required maxlength="120" placeholder="e.g. New vacuum" />
+      </div>
+      <div class="form-row">
+        <label for="itemNote">Note</label>
+        <textarea id="itemNote" placeholder="Details, model preferences, etc."></textarea>
+      </div>
+      <div class="split">
+        <div class="form-row">
+          <label for="itemCost">Relative Cost (1–5)</label>
+          <input id="itemCost" type="number" min="1" max="5" step="1" value="3" />
+        </div>
+        <div class="form-row">
+          <label>Tags</label>
+          <div id="tagMultiselect" class="tag-multiselect" role="group" aria-label="Select tags"></div>
+        </div>
+      </div>
+      <div class="inline-actions">
+  <button type="submit" class="btn btn-primary" id="saveItemBtn"><i class="bi bi-check2"></i> Save Item</button>
+  <button type="button" class="btn btn-outline-secondary" data-close-item>Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Tag Modal -->
+<div class="modal-backdrop hidden" id="tagModalWrap" role="dialog" aria-modal="true" aria-labelledby="tagModalTitle">
+  <div class="modal" id="tagModal">
+    <button class="close-x" data-close-tag aria-label="Close"><i class="bi bi-x-lg"></i></button>
+    <h2 id="tagModalTitle"><i class="bi bi-tags"></i> Manage Tags</h2>
+    <form id="tagForm" class="fade-enter" style="display:flex;flex-direction:column;gap:18px">
+      <div class="split">
+        <div class="form-row">
+          <label for="newTagName">New Tag Name</label>
+          <input id="newTagName" maxlength="40" />
+        </div>
+        <div class="form-row">
+          <label for="newTagPriority">Priority (1=Highest)</label>
+          <input id="newTagPriority" type="number" min="1" step="1" value="3" />
+        </div>
+      </div>
+      <div class="inline-actions">
+  <button type="button" class="btn btn-primary" id="addTagBtn"><i class="bi bi-plus-lg"></i> Add / Update</button>
+  <button type="button" class="btn btn-outline-secondary" data-close-tag>Close</button>
+      </div>
+      <div class="form-row" style="margin-top:4px">
+        <label>Existing Tags</label>
+        <div id="tagList" class="tag-list" aria-live="polite"></div>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+(function(){
+  const STORAGE_KEY = 'wishlist.v1';
+  const defaultData = {
+    tags:[{id:'Need', priority:1},{id:'Upgrade', priority:2},{id:'Fun', priority:3}],
+    items:[
+      {id:crypto.randomUUID(), name:'Car tires', note:'All-season set', tags:['Need'], cost:3, created:Date.now()-100000},
+      {id:crypto.randomUUID(), name:'New vacuum', note:'Quiet, HEPA', tags:['Need','Upgrade'], cost:2, created:Date.now()-90000},
+      {id:crypto.randomUUID(), name:'Nintendo Switch', note:'Family games', tags:['Fun'], cost:4, created:Date.now()-80000},
+    ]
+  };
+  let state = load() || defaultData;
+
+  // Elements
+  const tagFilter = document.getElementById('tagFilter');
+  const searchBox = document.getElementById('searchBox');
+  const grid = document.getElementById('itemGrid');
+  const emptyState = document.getElementById('emptyState');
+  const btnAddItem = document.getElementById('btnAddItem');
+  const btnManageTags = document.getElementById('btnManageTags');
+  const itemModalWrap = document.getElementById('itemModalWrap');
+  const tagModalWrap = document.getElementById('tagModalWrap');
+  const tagMultiselect = document.getElementById('tagMultiselect');
+  const tagList = document.getElementById('tagList');
+  const importFile = document.getElementById('importFile');
+
+  function save(){ localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); }
+  function load(){ try{ return JSON.parse(localStorage.getItem(STORAGE_KEY)); }catch(e){ return null; } }
+
+  function computeRank(item){
+    if(!item.tags.length) return 999; // unranked goes bottom
+    const priorities = item.tags.map(t => (state.tags.find(x=>x.id===t)||{priority:999}).priority);
+    return Math.min(...priorities);
+  }
+
+  function sortItems(items){
+    return items.slice().sort((a,b)=>{
+      const ra = computeRank(a), rb=computeRank(b);
+      if(ra!==rb) return ra-rb;
+      return b.created - a.created;
+    });
+  }
+
+  function refreshFilterOptions(){
+    const cur = tagFilter.value;
+    tagFilter.innerHTML = '<option value="__all">All Tags</option>' + state.tags
+      .sort((a,b)=>a.priority-b.priority||a.id.localeCompare(b.id))
+      .map(t=>`<option value="${encodeURIComponent(t.id)}">${t.id} (P${t.priority})</option>`).join('');
+    if([...tagFilter.options].some(o=>o.value===cur)) tagFilter.value = cur; else tagFilter.value='__all';
+  }
+
+  function render(){
+    refreshFilterOptions();
+    const filterTag = tagFilter.value;
+    const q = searchBox.value.trim().toLowerCase();
+    let items = sortItems(state.items);
+    if(filterTag !== '__all'){
+      const decoded = decodeURIComponent(filterTag);
+      items = items.filter(i=>i.tags.includes(decoded));
+    }
+    if(q){
+      items = items.filter(i=> i.name.toLowerCase().includes(q) || (i.note||'').toLowerCase().includes(q));
+    }
+    grid.innerHTML = '';
+    if(!items.length){
+      emptyState.classList.remove('hidden');
+      return;
+    } else emptyState.classList.add('hidden');
+
+    const frag = document.createDocumentFragment();
+    items.forEach(item=>{
+      const rank = computeRank(item);
+      const card = document.createElement('div');
+      card.className='card fade-enter';
+      card.innerHTML = `
+        <div class="rank-badge" title="Rank (lowest tag priority)">${rank===999?'-':rank}</div>
+        <h3>${escapeHtml(item.name)}</h3>
+        ${item.note?`<div class="note">${escapeHtml(item.note)}</div>`:''}
+        <div class="tags">${item.tags.map(t=>`<span class="tag-chip">${escapeHtml(t)}</span>`).join('')}</div>
+        <div class="cost" title="Relative Cost">${'$'.repeat(item.cost)}</div>
+        <div class="actions">
+          <button class="small-btn" data-edit="${item.id}"><i class="bi bi-pencil"></i> Edit</button>
+          <button class="small-btn danger" data-del="${item.id}"><i class="bi bi-trash"></i></button>
+        </div>`;
+      frag.appendChild(card);
+    });
+    grid.appendChild(frag);
+  }
+
+  function escapeHtml(str){ return str.replace(/[&<>"']/g, c=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#39;"}[c])); }
+
+  function openItemModal(editId){
+    document.getElementById('itemModalMode').textContent = editId? 'Edit':'Add';
+    const idInput = document.getElementById('itemId');
+    const nameInput = document.getElementById('itemName');
+    const noteInput = document.getElementById('itemNote');
+    const costInput = document.getElementById('itemCost');
+    if(editId){
+      const item = state.items.find(i=>i.id===editId);
+      idInput.value = item.id; nameInput.value=item.name; noteInput.value=item.note||''; costInput.value=item.cost;
+      // Set tags
+      drawTagMultiselect(item.tags);
+    } else {
+      idInput.value=''; nameInput.value=''; noteInput.value=''; costInput.value=3; drawTagMultiselect([]);
+    }
+    itemModalWrap.classList.remove('hidden');
+    nameInput.focus();
+    trapFocus(itemModalWrap);
+  }
+  function closeItemModal(){ itemModalWrap.classList.add('hidden'); releaseFocus(); }
+  function openTagModal(){ drawTagList(); drawTagMultiselect(getCurrentItemTags()); tagModalWrap.classList.remove('hidden'); document.getElementById('newTagName').focus(); trapFocus(tagModalWrap); }
+  function closeTagModal(){ tagModalWrap.classList.add('hidden'); releaseFocus(); }
+
+  function getCurrentItemTags(){
+    const id = document.getElementById('itemId').value;
+    if(!id) return [];
+    const item = state.items.find(i=>i.id===id); return item? item.tags.slice():[];
+  }
+  function drawTagMultiselect(selected){
+    tagMultiselect.innerHTML = state.tags.sort((a,b)=>a.priority-b.priority||a.id.localeCompare(b.id))
+      .map(t=>`<button type="button" data-tag="${t.id}" class="${selected.includes(t.id)?'active':''}" aria-pressed="${selected.includes(t.id)}">${t.id} <span style="opacity:.6">P${t.priority}</span></button>`).join('');
+  }
+  function drawTagList(){
+    tagList.innerHTML = '';
+    state.tags.slice().sort((a,b)=>a.priority-b.priority||a.id.localeCompare(b.id)).forEach(t=>{
+      const row = document.createElement('div');
+      row.className='tag-item';
+      row.innerHTML = `
+        <strong style="flex:1">${escapeHtml(t.id)}</strong>
+        <span class="badge-priority" title="Priority">P${t.priority}</span>
+        <input type="number" min="1" step="1" value="${t.priority}" data-edit-priority="${t.id}" aria-label="Edit priority for ${t.id}">
+        <button class="small-btn danger" data-del-tag="${t.id}" title="Delete tag"><i class="bi bi-x-lg"></i></button>
+      `;
+      tagList.appendChild(row);
+    });
+  }
+
+  // Events
+  btnAddItem.addEventListener('click',()=>openItemModal());
+  btnManageTags.addEventListener('click',()=>openTagModal());
+  document.querySelectorAll('[data-close-item]').forEach(el=>el.addEventListener('click',closeItemModal));
+  document.querySelectorAll('[data-close-tag]').forEach(el=>el.addEventListener('click',closeTagModal));
+
+  tagMultiselect.addEventListener('click',e=>{
+    if(e.target.closest('button[data-tag]')){
+      const btn = e.target.closest('button');
+      btn.classList.toggle('active');
+      const active = [...tagMultiselect.querySelectorAll('.active')].map(b=>b.dataset.tag);
+      btn.setAttribute('aria-pressed', btn.classList.contains('active'));
+    }
+  });
+
+  document.getElementById('itemForm').addEventListener('submit', e=>{
+    e.preventDefault();
+    const id = document.getElementById('itemId').value || crypto.randomUUID();
+    const name = document.getElementById('itemName').value.trim(); if(!name) return;
+    const note = document.getElementById('itemNote').value.trim();
+    const cost = Math.min(5, Math.max(1, parseInt(document.getElementById('itemCost').value)||3));
+    const tags = [...tagMultiselect.querySelectorAll('.active')].map(b=>b.dataset.tag);
+    const existing = state.items.find(i=>i.id===id);
+    if(existing){ Object.assign(existing,{name, note, cost, tags}); }
+    else state.items.push({id, name, note, cost, tags, created: Date.now()});
+    save(); render(); closeItemModal();
+  });
+
+  grid.addEventListener('click', e=>{
+    const editBtn = e.target.closest('[data-edit]');
+    if(editBtn){ openItemModal(editBtn.dataset.edit); return; }
+    const delBtn = e.target.closest('[data-del]');
+    if(delBtn){
+      const id = delBtn.dataset.del;
+      const idx = state.items.findIndex(i=>i.id===id);
+      if(idx>-1 && confirm('Delete this item?')){ state.items.splice(idx,1); save(); render(); }
+    }
+  });
+
+  document.getElementById('addTagBtn').addEventListener('click', ()=>{
+    const name = document.getElementById('newTagName').value.trim();
+    const priority = Math.max(1, parseInt(document.getElementById('newTagPriority').value)||3);
+    if(!name) return;
+    const existing = state.tags.find(t=>t.id.toLowerCase()===name.toLowerCase());
+    if(existing) existing.priority = priority; else state.tags.push({id:name, priority});
+    document.getElementById('newTagName').value='';
+    save(); drawTagList(); drawTagMultiselect(getCurrentItemTags()); render();
+  });
+  tagList.addEventListener('input', e=>{
+    const pr = e.target.getAttribute('data-edit-priority'); if(!pr) return;
+    const tag = state.tags.find(t=>t.id===pr); if(tag){ tag.priority = Math.max(1, parseInt(e.target.value)||1); save(); render(); }
+  });
+  tagList.addEventListener('click', e=>{
+    const del = e.target.closest('[data-del-tag]'); if(!del) return;
+    const id = del.dataset.delTag;
+    if(confirm('Delete tag and remove from items?')){
+      state.tags = state.tags.filter(t=>t.id!==id);
+      state.items.forEach(i=>{ i.tags = i.tags.filter(t=>t!==id); });
+      save(); drawTagList(); drawTagMultiselect(getCurrentItemTags()); render();
+    }
+  });
+
+  tagFilter.addEventListener('change', render);
+  searchBox.addEventListener('input', ()=>{ render(); });
+
+  // Export / Import
+  document.getElementById('btnExport').addEventListener('click', ()=>{
+    const data = JSON.stringify(state, null, 2);
+    const blob = new Blob([data], {type:'application/json'});
+    const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'wishlist-export.json'; a.click();
+    URL.revokeObjectURL(a.href);
+  });
+  document.getElementById('btnImport').addEventListener('click', ()=>importFile.click());
+  importFile.addEventListener('change', e=>{
+    const file = e.target.files[0]; if(!file) return;
+    const reader = new FileReader();
+    reader.onload = evt => {
+      try{
+        const data = JSON.parse(evt.target.result);
+        if(!data.tags || !Array.isArray(data.items)) throw new Error('Invalid file');
+        state = data; save(); render(); alert('Import complete.');
+      }catch(err){ alert('Import failed: '+err.message); }
+    };
+    reader.readAsText(file);
+    importFile.value='';
+  });
+
+  // Accessibility: focus trap
+  let focusTrap = null, previousFocus = null;
+  function trapFocus(container){
+    previousFocus = document.activeElement;
+    const selectors = 'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])';
+    const nodes = [...container.querySelectorAll(selectors)].filter(el=>!el.disabled && el.offsetParent!==null);
+    if(!nodes.length) return; focusTrap = {container, nodes};
+    const first = nodes[0], last = nodes[nodes.length-1];
+    container.addEventListener('keydown', focusTrap.handler = (e)=>{
+      if(e.key==='Tab'){
+        if(e.shiftKey && document.activeElement===first){ last.focus(); e.preventDefault(); }
+        else if(!e.shiftKey && document.activeElement===last){ first.focus(); e.preventDefault(); }
+      } else if(e.key==='Escape'){ if(container===itemModalWrap) closeItemModal(); else if(container===tagModalWrap) closeTagModal(); }
+    });
+  }
+  function releaseFocus(){ if(focusTrap){ focusTrap.container.removeEventListener('keydown', focusTrap.handler); focusTrap=null; if(previousFocus) previousFocus.focus(); previousFocus=null; } }
+
+  // Initial
+  refreshFilterOptions();
+  render();
+})();
+</script>
+</body>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+</html>

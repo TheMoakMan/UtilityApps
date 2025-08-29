@@ -4,6 +4,7 @@
 	<meta charset="UTF-8" />
 	<title>Roadmap Planner</title>
 	<meta name="viewport" content="width=device-width,initial-scale=1" />
+	<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" />
 	<style>
 		:root {
 			--bg:#0f1115;--panel:#1c2129;--panel-alt:#242b35;--border:#364151;--accent:#3da9ff;--accent-hover:#6dc0ff;--danger:#ff4d4f;--warn:#ffb347;--ok:#4caf50;--text:#e5eef5;--muted:#9dacba;--backlog:#39455a;--milestone:#2d3643;--dep-line:#6dc0ff99;--scrollbar-thumb:#465568;--highlight:#264f78;--selection:#17324d;
@@ -78,8 +79,8 @@
 		.dependency-source { box-shadow:0 0 0 2px var(--accent),0 0 0 4px #3da9ff55; }
 	</style>
 </head>
-<body>
-	<header>
+<body class="container-fluid">
+	<header class="row g-2 align-items-center">
 		<h1>Roadmap Planner</h1>
 		<input type="file" id="jsonFile" accept="application/json" />
 		<button id="importJsonBtn">Import JSON</button>
@@ -91,7 +92,7 @@
 		<button id="resetBtn" class="danger">Reset</button>
 		<button id="helpToggle" class="secondary">Help</button>
 	</header>
-	<main>
+	<main class="row g-0">
 		<div id="boardsWrapper" style="flex:1; position:relative; display:flex;">
 			<!-- Graph canvas removed (no arrows shown) -->
 			<div id="boards"></div>
